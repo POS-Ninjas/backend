@@ -135,7 +135,7 @@ app.post('/login', async (c) => {
     if (isMatch){
         response  = {
           success: true,
-          data: { "Bearer Token" : token, redirect: '/user/products' },
+          data: { "bearerToken" : token, redirect: '/user/products' },
           timestamp: new Date().toISOString()
         }
 
@@ -182,7 +182,7 @@ app.post('/login', async (c) => {
     if (isMatch){
       response  = {
         success: true,
-        data: { "Bearer Token": token, redirect: '/user/products' },
+        data: { "bearerToken": token, redirect: '/user/products' },
         timestamp: new Date().toISOString()
       }
 

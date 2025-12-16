@@ -3,7 +3,7 @@ import {
     LoginRequestWithEmailForm, 
     LoginRequestWithUsernameForm 
 } from "../auth/login";
-// import { Database } from "./types";
+
 
 import { Database  } from "bun:sqlite"
 import { logger } from '../logger'
