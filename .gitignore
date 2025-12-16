@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+.pnpm-debug.log*
+.npm/
+.yarn/
+bun.lockb
+
+# Runtime data & local databases
+concrete.db
+test.db
+*.db
+*.sql
+
+# Environment variables
+.env
+
+# Logs
+logs/
+*.log
+
+
+# IDE & Editor
+.vscode/
+
+
+# Build artifacts
+dist/
+build/
+out/
+*.tsbuildinfo
+.next/
+.cache/
+
+
+# Bun
+.veloute
+bun.lock
+
+# TypeScript
+*.tsbuildinfo
+
+# Temporary files
+tmp/
+temp/

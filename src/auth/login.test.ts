@@ -1,0 +1,117 @@
+// write tests
+
+// email, username and password validation 
+
+import { describe, expect, it } from 'bun:test'
+import app from '../index'
+import { LoginRequestForm } from './login'
+
+describe('user login flow', () => {
+
+  const requestBodyWithEmail = {
+    "email": "elias90@gmail.com",
+    "password": "erefss"
+  }
+
+ const requestBodyWithUsername = {
+    "username": "Test User Name",
+    "password": "erefss"
+  }
+
+  it('should return 200 Response when user tries to login with valid username and password', async () => {
+
+    const req = new Request('http://localhost:5000/login', {
+      method: "POST",
+      body: JSON.stringify(requestBodyWithUsername),
+    })
+
+    const res = await app.fetch(req)
+    const contents = await res.json()
+    
+    expect(res.status).toBe(200)    
+    expect(contents.success).toBe(true)
+    
+  })
+
+  it('should return 200 Response when user tries to login with valid email and password', async () => {
+
+    const req = new Request('http://localhost:5000/login', {
+      method: "POST",
+      body: JSON.stringify(requestBodyWithEmail),
+    })
+
+    const res = await app.fetch(req)
+    const contents = await res.json()
+
+    expect(res.status).toBe(200)    
+    expect(contents.success).toBe(true)
+    
+  })
+
+  describe('with graceful error handling when signing up with invalid/malformed details', async () => {
+
+    // check password, email, username individually,
+
+    it("when Username is empty ", async () => {
+          const malformedBody: LoginRequestForm = {
+            username: "",
+            password: "erereere"
+          }
+
+          const req = new Request('http://localhost:5000/login', {
+            method: "POST",
+            body: JSON.stringify(malformedBody)
+          })
+
+          const res = await app.fetch(req)
+          const contents = await res.json()
+          console.log(contents)
+    
+          expect(res.status).toBe(200)
+          expect(contents.success).toBe(false)
+
+    })
+
+    it("when email is invalid", async () => {
+        const malformedBody: LoginRequestForm = {
+          email: "test-=gmailcom",
+          password: "erereere"
+        }
+
+        const req = new Request('http://localhost:5000/login', {
+          method: "POST",
+          body: JSON.stringify(malformedBody),
+        })
+
+        const res = await app.fetch(req)
+        const contents = await res.json()
+  
+        expect(res.status).toBe(200)
+        expect(contents.data.reason).toBe("Invalid email format")
+        expect(contents.success).toBe(false)
+    })
+
+
+    it("password must be at least 6 characters", async () => {
+        const malformedBody: LoginRequestForm = {
+          username: "Test User name",
+          password: "erer"
+        }
+
+        const req = new Request('http://localhost:5000/login', {
+          method: "POST",
+          body: JSON.stringify(malformedBody),
+           
+        })
+
+        const res = await app.fetch(req)
+        const contents = await res.json()
+  
+        expect(res.status).toBe(200)
+        expect(contents.data.reason).toBe("Password must be at least 6 characters")
+        expect(contents.success).toBe(false)
+    })
+
+  })
+
+})
