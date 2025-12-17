@@ -25,3 +25,6 @@ http POST :5000/auth/signup \
 http POST :5000/login \
   username='Test User Name' \
   password='erefss' 
+
+http :5000/reset-password email=test@gmail.com
+

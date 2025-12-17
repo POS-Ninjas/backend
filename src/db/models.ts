@@ -1,40 +1,56 @@
 type User = {
-    user_id: number;
-    username: string;
-    password_hash: string;
-    first_name: string;
-    last_name: string;
-    email: string | null;
-    role_name: string;
-    is_active: boolean;
-    last_login: Date | null;
-    created_at: Date | null;
-    updated_at: Date | null;
+    user_id: number
+    username: string
+    password_hash: string
+    first_name: string
+    last_name: string
+    email: string 
+    role_name: string
+    is_active: boolean
+    last_login: Date | null
+    created_at: Date | null
+    updated_at: Date | null
 }
 
 type Role = {
-    role_id: number,
-    role_name: string,
-    role_description: string | null,
-    permissions: string | null,
-    created_at: string,
-    updated_at: string
+    role_id: number
+    role_name: string
+    role_description: string | null
+    permissions: string | null
+    created_at: Date
+    updated_at: Date
+}
+
+type PasswordReset = {
+    reset_id: number
+    user_id: number
+    email: string
+    token: string
+    expires_at: number
+    created_at: Date
+    used_at: Date
+}
+
+type PasswordResetRequestForm = {
+    user_id: number
+    email: string
+    token: string
 }
 
 type Client = {
-    client_id: number,
-    first_name: string,
-    last_name: string,
-    phone_number: string,
-    email: string,
-    tin: string,
-    client_type: string,
-    business_name: string | null,
-    business_address: string | null,
-    business_type: string,
-    is_active: boolean,
-    created_at: Date,
-    updated_at: Date,
+    client_id: number
+    first_name: string
+    last_name: string
+    phone_number: string
+    email: string
+    tin: string
+    client_type: string
+    business_name: string | null
+    business_address: string | null
+    business_type: string
+    is_active: boolean
+    created_at: Date
+    updated_at: Date
     deleted_at: Date
 }
 
@@ -185,5 +201,5 @@ export {
     Product, Sale, Sale_Item,
     Purchase_Items, Purchase,
     Payment, Report, Audit_Log,
-    Category
+    Category, PasswordReset, PasswordResetRequestForm
 }

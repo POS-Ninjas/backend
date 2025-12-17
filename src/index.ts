@@ -11,6 +11,7 @@ import { validate_signup_request_form } from './auth/signup'
 
 import { SqliteDatabase } from './db/db_service'
 import {  validate_login_request_form } from './auth/login'
+import { PasswordReset, PasswordResetRequestForm } from './db/models'
 
 const app = new Hono()
 
@@ -108,7 +109,7 @@ app.post('/login', async (c) => {
 
   } else if ("email" in validatedForm) {
 
-    const result = (await db.getUserByEmail(validatedForm))
+    const result = (await db.getUserByEmail(validatedForm.email))
     
     let stored_password_hash;
 
@@ -121,7 +122,6 @@ app.post('/login', async (c) => {
         timestamp: new Date().toISOString()
       })
     }
-    console.log('+++' )
     const isMatch = await Bun.password.verify(validatedForm.password, stored_password_hash as string)
 
     const payload = {
@@ -177,8 +177,7 @@ app.post('/login', async (c) => {
     }
 
     const token = await sign(payload, "test-is-secret")
-    console.log('+++' + token)
-
+  
     if (isMatch){
       response  = {
         success: true,
@@ -203,6 +202,107 @@ app.post('/login', async (c) => {
 
   } 
 
+})
+
+app.post('/reset-password', async (c) => {
+
+  const request_data = await c.req.json()
+  const user         = await db.getUserByEmail(request_data['email'])
+
+  if (user == null){
+    return c.json({
+      success: false,
+      data: { reason : `user with ${request_data['email']} not found`},
+      timestamp: new Date().toISOString()
+    })
+    
+  } else if (user && typeof user === 'object' && 'email' in user) {
+
+    const token = crypto.randomUUID();
+
+    const password_reset_form: PasswordResetRequestForm = {
+      user_id: user.user_id,
+      email: user.email,
+      token: token,
+    }
+
+    const res = await db.insertPasswordResetForm(password_reset_form)
+
+    if (typeof res == 'number'){
+        return c.json({
+          success: true,
+          data: {
+            "redirect-link": `/reset-password/${token}`
+          },
+          timestamp: new Date().toISOString()
+        })
+    } else {
+      return c.json({
+        success: false,
+        data: { reason : res },
+        timestamp: new Date().toISOString()
+      })
+    }
+    
+  }
+})
+
+app.post('/reset-password/:token', async (c) => {
+
+  const token = c.req.param('token')
+  const update_password_details = await c.req.json()
+
+  const retrieveRecord = await db.getPasswordResetRequestByToken(token) as {success: boolean, data: any}
+
+  if (retrieveRecord['data'] == null) {
+      return c.json({
+        success: false,
+        data: { reason : "token doesn't exist in DB" },
+        timestamp: new Date().toISOString()
+      })
+  } else {
+    const expiry = new Date(retrieveRecord['data']['expires_at']).getTime()
+
+    if (Date.now() > expiry){
+      return c.json({
+        success: false,
+        data: { reason : "token has expired" },
+        timestamp: new Date().toISOString()
+      })
+    } else {
+
+      const getToken = await db.getPasswordResetRequestByToken(token) as { success: boolean, data: any}
+      const isTokenUsed = getToken['data']['used_at'] != null
+
+      if (isTokenUsed){
+        
+        return c.json({
+          success: false,
+          data: { reason : "token has been used" },
+          timestamp: new Date().toISOString()
+        })
+
+      } else {
+
+        const res = await db.updateUserPassword(
+          retrieveRecord['data']['user_id'], 
+          update_password_details['password']
+        )
+
+        const markTokenAsUsed = await db.markTokenasUsed(token)
+        console.log(markTokenAsUsed)
+
+        return c.json({
+          success: true,
+          data: "user password updated successfully",
+          timestamp: new Date().toISOString()
+        })
+        
+      }
+      
+    }
+
+  }
 })
 
 app.get('/', (c) => c.text('You can access: /static/hello.txt'))

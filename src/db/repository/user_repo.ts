@@ -1,4 +1,4 @@
-import { User } from "../models"
+import { PasswordReset, User } from "../models"
 import { SignupRequestForm } from '../../auth/signup'
 import { Database  } from "bun:sqlite"
 import { logger } from "../../logger"
@@ -70,7 +70,6 @@ export class UserRepository implements UserRepo {
                 }
             }
             
-        
             logger.error("Database error inserting user:", error);
             return { error: "Failed to create user" };
         }
@@ -104,6 +103,16 @@ export class UserRepository implements UserRepo {
         return res.changes > 0;
     }
 
+    async updateUserPassword(db: Database, userId: number, newPassword: string) {
+        const hashedPassword = await Bun.password.hash(newPassword)
+        const query = db.query(`
+            UPDATE users 
+            SET password_hash = ?, updated_at = datetime('now')
+            WHERE user_id = ?
+        `)
+        return query.run(hashedPassword, userId).lastInsertRowid
+    }
+
     async getAllUsers(db: Database): Promise<DbResult<Array<User>>> {
         const allUsers = db.query("select * from users").all() as User[]
         return { success:true, data: allUsers }
@@ -116,12 +125,12 @@ export class UserRepository implements UserRepo {
 
     async getUserByUsername(db: Database, username: string): Promise<DbResult<User>> {
         const user = db.query("SELECT * FROM users WHERE username = ?").get(username) as User
-        return { success:true, data: user }
+        return { success: true, data: user }
     }
 
     async getUserByRolename(db: Database, role: string): Promise<DbResult<User>> {
         const user = db.query("SELECT * FROM users WHERE role = ?").get(role) as User
-        return { success:true, data: user }
+        return { success: true, data: user }
     }
 
     deleteUser(db: Database, username: string): void {

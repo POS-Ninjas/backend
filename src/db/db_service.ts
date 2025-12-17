@@ -3,12 +3,14 @@ import {
     LoginRequestWithEmailForm, 
     LoginRequestWithUsernameForm 
 } from "../auth/login";
+import { PasswordResetRequestForm } from "./models"
 
 
 import { Database  } from "bun:sqlite"
 import { logger } from '../logger'
 import { UserRepository } from "./repository/user_repo";
-import { User } from "./models"
+import { PasswordResetRepository } from "./repository/password_reset_repo";
+import { PasswordReset, User } from "./models"
 
 interface RoleData {
     [key: string]: string;
@@ -34,6 +36,7 @@ export class SqliteDatabase  {
 
     private db: Database
     private user_repo: UserRepository
+    private password_reset_repo: PasswordResetRepository
 
     constructor(db: string){
 
@@ -44,6 +47,7 @@ export class SqliteDatabase  {
         }
         
         this.user_repo = new UserRepository()
+        this.password_reset_repo = new PasswordResetRepository()
         this.init(db)
     }
 
@@ -52,8 +56,6 @@ export class SqliteDatabase  {
         logger.info("Starting sqlite database")
         this.db.run('PRAGMA foreign_keys = ON')
         const schema = await Bun.file("./pos_tables.sql").text()
-   
-        this.user_repo = new UserRepository()
 
         if (db == "memory"){
             logger.info("running schema in memory")
@@ -75,8 +77,13 @@ export class SqliteDatabase  {
         return res as number
     }
 
-    async getUserByEmail(newUserDetails: LoginRequestWithEmailForm): Promise<User | string> {
-        const res = await this.user_repo.getUserByEmail(this.db, newUserDetails.email)
+    async updateUserPassword(userId: number, updated_password: string): Promise<number> {
+        const res = await this.user_repo.updateUserPassword(this.db, userId, updated_password)
+        return res as number
+    }
+
+    async getUserByEmail(email: string): Promise<User | string> {
+        const res = await this.user_repo.getUserByEmail(this.db, email)
         if (res.success == true){
             return res.data
         } else {
@@ -94,6 +101,66 @@ export class SqliteDatabase  {
         }
     }
 
+    async insertPasswordResetForm(passwordResetForm: PasswordResetRequestForm): Promise<number | string>{
+        const res = await this.password_reset_repo.createPasswordResetRequest(this.db, passwordResetForm)
+        if (typeof res == 'number'){
+            return res
+        } else {
+            return res.error
+        }
+    }
+
+    async getPasswordResetRequestByEmail(email: string)  {
+        const res = this.password_reset_repo.getPasswordResetRequestByEmail(this.db, email)
+        if (res.success == true ){
+            return res
+        } else {
+            return res.error
+        }
+
+    }
+
+    async getPasswordResetRequestByUserId(user_id: number)  {
+        const res = this.password_reset_repo.getPasswordResetRequestByUserId(this.db, user_id)
+        if (res.success == true ){
+            return res
+        } else {
+            return res.error
+        }
+
+    }
+
+    async getPasswordResetRequestByExpiry(expires_at: number)  {
+        const res = this.password_reset_repo.getPasswordResetRequestByExpiry(this.db, expires_at)
+        if (res.success == true ){
+            return res
+        } else {
+            return res.error
+        }
+
+    }
+
+    async getPasswordResetRequestByToken(token: string)  {
+        const res = this.password_reset_repo.getPasswordResetRequestByToken(this.db, token)
+        if (res.success == true ){
+            return res
+        } else {
+            return res.error
+        }
+
+    }
+
+    async markTokenasUsed(token: string): Promise<boolean> {
+        const res = await this.password_reset_repo.markPasswordResetTokenAsUsed(this.db, token)
+        console.log(res)
+
+        if (res){
+            return true
+        } else {
+            return false
+        }
+
+    }
 
     async insertRoles() {
         logger.info("initializing database with roles and roles permissions")
