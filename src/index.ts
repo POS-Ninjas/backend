@@ -11,7 +11,7 @@ import { validate_signup_request_form } from './auth/signup'
 
 import { SqliteDatabase } from './db/db_service'
 import {  validate_login_request_form } from './auth/login'
-import { PasswordReset, PasswordResetRequestForm } from './db/models'
+import { PasswordResetRequestForm } from './db/models'
 
 const app = new Hono()
 
@@ -218,6 +218,8 @@ app.post('/reset-password', async (c) => {
     
   } else if (user && typeof user === 'object' && 'email' in user) {
 
+    // Multiple reset requests before first expires (invalidate old tokens when new one is created)
+
     const token = crypto.randomUUID();
 
     const password_reset_form: PasswordResetRequestForm = {
@@ -252,7 +254,17 @@ app.post('/reset-password/:token', async (c) => {
   const token = c.req.param('token')
   const update_password_details = await c.req.json()
 
-  const retrieveRecord = await db.getPasswordResetRequestByToken(token) as {success: boolean, data: any}
+  const password: string = update_password_details['password']
+
+  if (password == undefined || password.length < 6 ){
+    return c.json({
+      success: false,
+      data: { reason : "password must be at least 6 characters" },
+      timestamp: new Date().toISOString()
+    })
+  }
+
+  const retrieveRecord = await db.getPasswordResetRequestByToken(token) as { success: boolean, data: any }
 
   if (retrieveRecord['data'] == null) {
       return c.json({
@@ -261,6 +273,7 @@ app.post('/reset-password/:token', async (c) => {
         timestamp: new Date().toISOString()
       })
   } else {
+    
     const expiry = new Date(retrieveRecord['data']['expires_at']).getTime()
 
     if (Date.now() > expiry){
@@ -283,21 +296,29 @@ app.post('/reset-password/:token', async (c) => {
         })
 
       } else {
-
         const res = await db.updateUserPassword(
           retrieveRecord['data']['user_id'], 
           update_password_details['password']
         )
 
         const markTokenAsUsed = await db.markTokenasUsed(token)
-        console.log(markTokenAsUsed)
 
-        return c.json({
-          success: true,
-          data: "user password updated successfully",
-          timestamp: new Date().toISOString()
-        })
-        
+        if (markTokenAsUsed){
+          return c.json({
+            success: true,
+            data: "user password updated successfully",
+            timestamp: new Date().toISOString()
+          })
+
+        } else {
+          return c.json({
+            success: false,
+            data: "user password update was not successful",
+            timestamp: new Date().toISOString()
+          })
+
+        }
+
       }
       
     }

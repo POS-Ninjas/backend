@@ -2,7 +2,8 @@
   "name": "my-app",
   "scripts": {
     "dev": "bun run --hot src/index.ts",
-    "start": "bun run  src/index.ts"
+    "start": "bun run  src/index.ts",
+    "seed": "bun run src/scripts/seed.ts"
   },
   "dependencies": {
     "hono": "^4.10.7",

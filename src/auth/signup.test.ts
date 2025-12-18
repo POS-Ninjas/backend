@@ -63,7 +63,7 @@ describe('user signup flow', () => {
 
     it("when Last Name is empty ", async () => {
           const malformedBody: SignupRequestForm = {
-                  username: "Test User name",
+            username: "Test User name",
             fullname: "Test Full Name",
             lastname: "",
             email: "test@gmail.com",

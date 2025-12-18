@@ -152,9 +152,8 @@ export class SqliteDatabase  {
 
     async markTokenasUsed(token: string): Promise<boolean> {
         const res = await this.password_reset_repo.markPasswordResetTokenAsUsed(this.db, token)
-        console.log(res)
 
-        if (res){
+        if (typeof res == 'number'){
             return true
         } else {
             return false

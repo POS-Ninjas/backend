@@ -2,21 +2,45 @@
 
 // email, username and password validation 
 
-import { describe, expect, it } from 'bun:test'
+import { beforeAll, describe, expect, it } from 'bun:test'
 import app from '../index'
 import { LoginRequestForm } from './login'
+import { seedUsers } from '../scripts/seed'
+import { Database } from 'bun:sqlite'
 
 describe('user login flow', () => {
 
-  const requestBodyWithEmail = {
-    "email": "elias90@gmail.com",
-    "password": "erefss"
+  let users : {
+      emailUser: string
+      usernameUser: string
+      password: string
   }
 
- const requestBodyWithUsername = {
-    "username": "Test User Name",
-    "password": "erefss"
+  let requestBodyWithEmail: {
+      email: string;
+      password: string;
   }
+
+  let requestBodyWithUsername: {
+    username: string;
+    password: string;
+  }
+
+
+  beforeAll(async () => {
+    users =  await seedUsers(new Database('./concrete.db', { strict : true}))
+
+    requestBodyWithEmail = {
+      "email": users.emailUser,
+      "password": users.password
+    }
+
+    requestBodyWithUsername = {
+      "username": users.usernameUser,
+      "password": users.password
+    }
+
+  })
 
   it('should return 200 Response when user tries to login with valid username and password', async () => {
 
@@ -25,7 +49,7 @@ describe('user login flow', () => {
       body: JSON.stringify(requestBodyWithUsername),
     })
 
-    const res = await app.fetch(req)
+    const res      = await app.fetch(req)
     const contents = await res.json()
     
     expect(res.status).toBe(200)    
@@ -42,15 +66,14 @@ describe('user login flow', () => {
 
     const res = await app.fetch(req)
     const contents = await res.json()
+    console.log(contents)
 
-    expect(res.status).toBe(200)    
+    expect(res.status).toBe(200)   
     expect(contents.success).toBe(true)
     
   })
 
   describe('with graceful error handling when signing up with invalid/malformed details', async () => {
-
-    // check password, email, username individually,
 
     it("when Username is empty ", async () => {
           const malformedBody: LoginRequestForm = {
@@ -65,7 +88,6 @@ describe('user login flow', () => {
 
           const res = await app.fetch(req)
           const contents = await res.json()
-          console.log(contents)
     
           expect(res.status).toBe(200)
           expect(contents.success).toBe(false)

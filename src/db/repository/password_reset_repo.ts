@@ -34,7 +34,6 @@ export class PasswordResetRepository implements PasswordResetImpl {
             )
             VALUES (?, ?, ?, datetime('now', '+3 minutes'))
         `
-
         try {
 
             const query = db.query(queryString)
