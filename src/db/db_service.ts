@@ -3,13 +3,14 @@ import {
     LoginRequestWithEmailForm, 
     LoginRequestWithUsernameForm 
 } from "../auth/login";
-import { PasswordResetRequestForm } from "./models"
+import { Audit_Log, PasswordResetRequestForm } from "./models"
 
 
 import { Database  } from "bun:sqlite"
 import { logger } from '../logger'
 import { UserRepository } from "./repository/user_repo";
 import { PasswordResetRepository } from "./repository/password_reset_repo";
+import { AuditLogRepository, Log } from "./repository/audit_log_repo";
 import { PasswordReset, User } from "./models"
 
 interface RoleData {
@@ -37,6 +38,7 @@ export class SqliteDatabase  {
     private db: Database
     private user_repo: UserRepository
     private password_reset_repo: PasswordResetRepository
+    private audit_log_repo: AuditLogRepository
 
     constructor(db: string){
 
@@ -46,7 +48,8 @@ export class SqliteDatabase  {
             this.db = new Database(":memory:", {strict: true})
         }
         
-        this.user_repo = new UserRepository()
+        this.user_repo           = new UserRepository()
+        this.audit_log_repo      = new AuditLogRepository()
         this.password_reset_repo = new PasswordResetRepository()
         this.init(db)
     }
@@ -82,18 +85,17 @@ export class SqliteDatabase  {
         return res as number
     }
 
-    async getUserByEmail(email: string): Promise<User | string> {
-        const res = await this.user_repo.getUserByEmail(this.db, email)
+    getUserByEmail(email: string): User | string {
+        const res = this.user_repo.getUserByEmail(this.db, email)
         if (res.success == true){
             return res.data
         } else {
             return res.error
         }
-
     }
 
-    async getUserByUsername(newUserDetails: LoginRequestWithUsernameForm): Promise<User | string> {
-        const res = await this.user_repo.getUserByUsername(this.db, newUserDetails.username)
+    getUserByUsername(newUserDetails: LoginRequestWithUsernameForm): User | string {
+        const res = this.user_repo.getUserByUsername(this.db, newUserDetails.username)
         if (res.success == true){
             return res.data
         } else {
@@ -161,6 +163,38 @@ export class SqliteDatabase  {
 
     }
 
+    async create_audit_log(log: Log) {
+        const res = this.audit_log_repo.create_audit_log(this.db, log)
+
+        if (typeof res == 'number' ){
+          return res
+        } else {
+          return res.error
+        }
+
+    }
+
+    get_logs(): Array<Audit_Log> | string {
+        const res = this.audit_log_repo.get_all_audit_logs(this.db)
+        if (res.success == true ){
+            return res.data
+        } else {
+            return res.error
+        }
+
+    }
+
+    get_log_by_user_id(user_id: number): Array<Audit_Log> | string {
+
+        const res = this.audit_log_repo.get_logs_of_user(this.db, user_id)
+
+        if (res.success == true ){
+            return res.data
+        } else {
+            return res.error
+        }
+    }
+
     async insertRoles() {
         logger.info("initializing database with roles and roles permissions")
         for (const [name, description] of Object.entries(ROLE_NAMES_AND_DESCRIPTIONS)) {
@@ -183,6 +217,8 @@ export class SqliteDatabase  {
             )
         }
     }
+
+
 
     close() {
         if (this.db) {

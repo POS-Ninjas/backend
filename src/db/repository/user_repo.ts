@@ -14,10 +14,10 @@ type DbResult<T> =
 interface UserRepo {
     insertNewUser(db: Database, user: SignupRequestForm): Promise<RecordId | { error: string }>
     updateUserDetails(db: Database,  userId: number,  user: UserDetails): Promise<boolean>
-    getAllUsers(db: Database): Promise<DbResult<Array<User>>>
-    getUserByEmail(db: Database, email: string): Promise<DbResult<User>>
-    getUserByUsername(db: Database, username: string): Promise<DbResult<User>>
-    getUserByRolename(db: Database, role: string): Promise<DbResult<User>>
+    getAllUsers(db: Database): DbResult<Array<User>>
+    getUserByEmail(db: Database, email: string): DbResult<User>
+    getUserByUsername(db: Database, username: string): DbResult<User>
+    getUserByRolename(db: Database, role: string): DbResult<User>
     deleteUser(db: Database, username: string): void
 }
 
@@ -113,22 +113,22 @@ export class UserRepository implements UserRepo {
         return query.run(hashedPassword, userId).lastInsertRowid
     }
 
-    async getAllUsers(db: Database): Promise<DbResult<Array<User>>> {
+    getAllUsers(db: Database): DbResult<Array<User>> {
         const allUsers = db.query("select * from users").all() as User[]
         return { success:true, data: allUsers }
     }
 
-    async getUserByEmail(db: Database, email: string): Promise<DbResult<User>> {
+    getUserByEmail(db: Database, email: string): DbResult<User> {
         const user = db.query("SELECT * FROM users WHERE email = ?").get(email) as User
         return { success:true, data: user }
     }
 
-    async getUserByUsername(db: Database, username: string): Promise<DbResult<User>> {
+    getUserByUsername(db: Database, username: string): DbResult<User> {
         const user = db.query("SELECT * FROM users WHERE username = ?").get(username) as User
         return { success: true, data: user }
     }
 
-    async getUserByRolename(db: Database, role: string): Promise<DbResult<User>> {
+    getUserByRolename(db: Database, role: string): DbResult<User> {
         const user = db.query("SELECT * FROM users WHERE role = ?").get(role) as User
         return { success: true, data: user }
     }
