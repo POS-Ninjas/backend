@@ -43,7 +43,7 @@ function validate_signup_request_form(formdata: any): SignupRequestForm | Signup
             password: parsedSchema.password
         } 
 
-        // add a logger for validating?
+        logger.info("Successfully validated signup details of user with username " + formData.username)
         return formData
     } catch (error) {
     
@@ -54,6 +54,7 @@ function validate_signup_request_form(formdata: any): SignupRequestForm | Signup
                 status: 400,
                 reason: JSON.parse(err.message)[0].message
             }
+            logger.error("could not validate the signup details. Cause is " + errorResp)
             return errorResp
         }
         
@@ -62,7 +63,8 @@ function validate_signup_request_form(formdata: any): SignupRequestForm | Signup
             reason: "Internal server error"
         }
         
-        // should i add a logger here?
+     
+        logger.error("could not validate the signup form details. Cause is " + errorResp)
         return errorResp
     }
 }

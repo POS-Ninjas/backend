@@ -316,13 +316,9 @@ app.post('/reset-password/:token', async (c) => {
             data: "user password update was not successful",
             timestamp: new Date().toISOString()
           })
-
         }
-
       }
-      
     }
-
   }
 })
 

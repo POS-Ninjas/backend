@@ -37,19 +37,22 @@ function validate_login_request_form(formdata: any): LoginRequestForm {
             } 
 
             // add a logger for validating?
+            logger.info("Successfully validated login details of user with username " + formData.username)
             return formData
         } catch (error) {
         
             const err = error as z.ZodError
             
             if (error instanceof z.ZodError) {
+
                 const errorResp: LoginRequestForm = {
                     status: 400,
                     reason: JSON.parse(err.message)[0].message
                 }
+
+                logger.error("One of the inputs(username / password / email) is missing. Returning a 400 repsonse. Cause is " + errorResp)
                 return errorResp
             }
-
         }
 
     } else {
@@ -68,6 +71,7 @@ function validate_login_request_form(formdata: any): LoginRequestForm {
             } 
 
             // add a logger for validating?
+            logger.info("Successfully validated login details of user with email " + formData.email)
             return formData
         } catch (error) {
         
@@ -77,25 +81,25 @@ function validate_login_request_form(formdata: any): LoginRequestForm {
                 const msg = JSON.parse(err.message)[0].message as string
 
                 if (msg.includes("undefined")){
+
                     const errorResp: LoginRequestForm = {
                         status: 400,
                         reason: "Check inputs: (username / password / email) one is missing"
                     }
-
+                    
+                    logger.error("One of the inputs(username / password / email) is missing. Returning a 400 repsonse. Cause is " + errorResp)
                     return errorResp
                 } else {
                     const errorResp: LoginRequestForm = {
                         status: 400,
                         reason: msg
                     }
+
+                    logger.error("could not validate the login details. Cause is " + errorResp)
                     return errorResp
-
                 }
-  
             }
-  
         }
-
     }
     
     const errorResp: LoginRequestForm = {
@@ -103,7 +107,7 @@ function validate_login_request_form(formdata: any): LoginRequestForm {
         reason: "Internal server error"
     }
     
-    // should i add a logger here?
+    logger.error("something went wrong, returning internal server error")
     return errorResp
 }
 

@@ -2,7 +2,6 @@ import { Audit_Log } from "../models"
 import { Database  } from "bun:sqlite"
 import { logger } from "../../logger"
 
-
 type RecordId = number
 type DbResult<T> = 
     | { success: true; data: T }
@@ -13,7 +12,6 @@ export type Log = Omit<Audit_Log, "audit_id" | "created_at">
 interface AuditLogRepo {
     get_all_audit_logs(db: Database): DbResult<Array<Audit_Log>>
     get_logs_of_user(db: Database, user_id: number): DbResult<Array<Audit_Log>>
-    delete_all_audit_logs(): void
     create_audit_log(db: Database, log: Log): RecordId | { error: string }
 }
 
@@ -56,10 +54,8 @@ export class AuditLogRepository implements AuditLogRepo {
     }
 
     get_logs_of_user(db: Database, user_id: number): DbResult<Array<Audit_Log>>{
-        const logs = db.query("SELECT * FROM audit_log WHERE user_id = ?").get(user_id) as Audit_Log[]
+        const logs = db.query("SELECT * FROM audit_log WHERE user_id = ?").all(user_id) as Audit_Log[]
         return { success:true, data: logs }
     }
-
-    delete_all_audit_logs() {} 
 
 }

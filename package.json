@@ -6,6 +6,7 @@
     "seed": "bun run src/scripts/seed.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-ses": "^3.958.0",
     "hono": "^4.10.7",
     "mailslurp-client": "^16.0.0",
     "pino": "^10.1.0",

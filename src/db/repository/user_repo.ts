@@ -17,7 +17,7 @@ interface UserRepo {
     getAllUsers(db: Database): DbResult<Array<User>>
     getUserByEmail(db: Database, email: string): DbResult<User>
     getUserByUsername(db: Database, username: string): DbResult<User>
-    getUserByRolename(db: Database, role: string): DbResult<User>
+    getUserByRolename(db: Database, role: string): DbResult<User[]> // ask questions, will this be multiple or oen
     deleteUser(db: Database, username: string): void
 }
 
@@ -128,13 +128,13 @@ export class UserRepository implements UserRepo {
         return { success: true, data: user }
     }
 
-    getUserByRolename(db: Database, role: string): DbResult<User> {
-        const user = db.query("SELECT * FROM users WHERE role = ?").get(role) as User
+    getUserByRolename(db: Database, role: string): DbResult<User[]> {
+        const user = db.query("SELECT * FROM users WHERE role = ?").all(role) as User[] 
         return { success: true, data: user }
     }
 
     deleteUser(db: Database, username: string): void {
-       const query =  db.query("DELETE * FROM users WHERE username = ?")
+       const query = db.query("DELETE * FROM users WHERE username = ?")
        query.run(username)
     }
     
