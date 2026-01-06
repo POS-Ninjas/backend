@@ -1,64 +1,137 @@
 // TODO - User CreateTemplate & SendEmail Actions in the docs 
 // TODO - Verify email with EmailVerify before sending 
 
-import { SendEmailCommand } from "@aws-sdk/client-ses";
+import { 
+  SendEmailCommand, 
+  CreateTemplateCommand, 
+  SendTemplatedEmailCommand,
+  ListTemplatesCommand,
+  TemplateMetadata
+} from "@aws-sdk/client-ses";
 import { sesClient } from "../libs/sesClient";
+import { getUniqueName } from "../auth/util";
+import { logger } from "../logger";
+import { User } from "../db/models";
 
-const createSendEmailCommand = (toAddress: string, fromAddress: string) => {
-  return new SendEmailCommand({
-    Destination: {
-      /* required */
-      CcAddresses: [
-        /* more items */
-      ],
-      ToAddresses: [
-        toAddress,
-        /* more To-email addresses */
-      ],
-    },
-    Message: {
-      /* required */
-      Body: {
-        /* required */
-        Html: {
-          Charset: "UTF-8",
-          Data: "HTML_FORMAT_BODY",
-        },
-        Text: {
-          Charset: "UTF-8",
-          Data: "TEXT_FORMAT_BODY",
-        },
-      },
-      Subject: {
-        Charset: "UTF-8",
-        Data: "EMAIL_SUBJECT",
-      },
-    },
-    Source: fromAddress,
-    ReplyToAddresses: [
-      /* more items */
-    ],
-  });
-};
 
-const run = async () => {
-  const sendEmailCommand = createSendEmailCommand(
-    "sailewalderbs@gmail.com",
-    "sailewalderbs@gmail.com",
-  );
+export const LIST_OF_TEMPLATES = "ResetPassword, WelcomeUserEmail,"
+
+// this must run where the app starts
+async function createAndRegisterTemplate(template_name: string = ""){
+  const TEMPLATE_NAME = "ResetPasswordNew";
+
+  const TEXT_FORMAT_BODY = `
+    <h1>Reset Password</h1>
+    <p>You requested to reset your password, {{contact.firstName}}.</p>
+    <p>Follow this link to reset your password: {{contact.emailResetLink}} </p>
+    <p>If it wasn't you, please ignore this message.</p>
+  `;
+
+  const createResetPasswordTemplate =  
+    new CreateTemplateCommand({
+      Template: {
+        TemplateName: TEMPLATE_NAME,
+        HtmlPart: TEXT_FORMAT_BODY,
+        SubjectPart: "POS Ninjas POS: Reset Your Password",
+      }
+    })
+  
 
   try {
-    return await sesClient.send(sendEmailCommand);
-  } catch (caught) {
-    if (caught instanceof Error && caught.name === "MessageRejected") {
-      /** @type { import('@aws-sdk/client-ses').MessageRejected} */
-      const messageRejectedError = caught;
-      return messageRejectedError;
+    await sesClient.send(createResetPasswordTemplate);
+    console.log(`Template created: ${TEMPLATE_NAME}`);
+    return TEMPLATE_NAME;
+
+  } catch(err) {
+
+     if (err === 'AlreadyExists') {
+      logger.info('Template already exists');
+    } else {
+      logger.error("Failed to create template.", err);
+      throw err;
     }
-    throw caught;
+    
   }
-};
 
-run()
+}
+
+// check if template exists, other than that create it
+async function checkIfTemplateExists(template_name: string){
+  const createListTemplatesCommand = (maxItems: number) =>
+  new ListTemplatesCommand({ MaxItems: maxItems });
+
+  const listTemplatesCommand = createListTemplatesCommand(10);
+
+  try {
+    const res = await sesClient.send(listTemplatesCommand);
+    const templatesList: TemplateMetadata[] | undefined  = res['TemplatesMetadata']
+    
+    if (templatesList) {
+      return templatesList.some(template => template.Name === template_name)
+    } else {
+       throw new Error(`Template ${template_name} does not exist, create the password`)
+    }
+
+  } catch (err) {
+    logger.error("Failed to list templates.", err);
+    return err;
+  }
+  
+}
+
+async function sendResetPasswordEmail(email: string, name: string, resetLink: string, template_name: string) {
+  
+  const cmd = new SendTemplatedEmailCommand({
+    Source: "sailewalderbs@gmail.com",  
+    Destination: { ToAddresses: [email] },
+    Template: template_name,
+    TemplateData: JSON.stringify({ 
+      contact: { firstName: name, emailResetLink: resetLink },
+    })
+  });
+  
+  try {
+    const response = await sesClient.send(cmd);
+    logger.info(`Email sent to ${email}`);
+    return response;
+  } catch (err: any) {
+    if (err.name === "MessageRejected") {
+      logger.error(`Email rejected for ${email}:`, err.message);
+    }
+    throw err;
+  }
+}
 
 
+// create templated email 
+
+
+const run = async () => {
+
+
+  // await createAndRegisterTemplate()
+
+  const res = await checkIfTemplateExists("ResetPasswordNew") as boolean
+
+  if (res){
+    await sendResetPasswordEmail("sailewalderbs@gmail.com", "Test Name", "/reset-link", "ResetPasswordNew");
+  } else {
+    logger.error(`Template does not exist, use the list of available Templates ${LIST_OF_TEMPLATES}`)
+  }
+  
+} 
+
+export async function sendPasswordResetEmail(user: User, token: string){
+
+  const res = await checkIfTemplateExists("ResetPasswordNew") as boolean
+
+  // ADD the BASE_URL to the constructed link
+  if (res){
+    const construct_reset_link = `/reset-link/${token}`
+    await sendResetPasswordEmail(user.email, user.first_name, construct_reset_link, "ResetPasswordNew");
+  } else {
+    logger.error(`Template does not exist, use the list of available Templates ${LIST_OF_TEMPLATES}`)
+    // should i throw an error here?
+  }
+
+}

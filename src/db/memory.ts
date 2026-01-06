@@ -92,7 +92,7 @@ export class MemoryDatabase implements Database {
                 VALUES (?, ?, ?)
                 `
             
-                const query = this.db.query(queryString)
+            const query = this.db.query(queryString)
 
             query.run(
                 name,

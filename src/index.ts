@@ -12,6 +12,7 @@ import { validate_signup_request_form } from './auth/signup'
 import { SqliteDatabase } from './db/db_service'
 import {  validate_login_request_form } from './auth/login'
 import { PasswordResetRequestForm } from './db/models'
+import { sendPasswordResetEmail } from './auth/email_sender'
 
 const app = new Hono()
 
@@ -231,6 +232,9 @@ app.post('/reset-password', async (c) => {
     const res = await db.insertPasswordResetForm(password_reset_form)
 
     if (typeof res == 'number'){
+
+      // send email here
+        sendPasswordResetEmail(user, token)
         return c.json({
           success: true,
           data: {
@@ -311,6 +315,7 @@ app.post('/reset-password/:token', async (c) => {
           })
 
         } else {
+
           return c.json({
             success: false,
             data: "user password update was not successful",
@@ -322,7 +327,6 @@ app.post('/reset-password/:token', async (c) => {
   }
 })
 
-app.get('/', (c) => c.text('You can access: /static/hello.txt'))
 app.get(
   '/static/*',
   serveStatic({
@@ -331,8 +335,6 @@ app.get(
       path.replace(/^\/static/, '/static'),
   })
 )
-
-app.get('*', serveStatic({ path: './static/fallback.txt' }))
 
 export default {
   port: 5000,

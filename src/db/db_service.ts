@@ -64,7 +64,8 @@ export class SqliteDatabase  {
             logger.info("running schema in memory")
             this.db.run(schema)
         } else {
-            logger.info("using concrete implementation look for test.db file in project dir")
+            logger.info(`using concrete implementation look for ${this.db.filename} file in project dir`)
+            return
             // this.db.run(schema)
         }
 
