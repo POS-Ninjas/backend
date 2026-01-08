@@ -8,4 +8,4 @@ To run:
 bun run dev
 ```
 
-open http://localhost:3000
+This is the Backend of an ongoing POS project 
