@@ -3,52 +3,52 @@ import { Database  } from "bun:sqlite"
 import { logger } from "../../logger"
 
 
-type ProductDetails = Omit<Product, "product_id" | "created_at" | "updated_at"> 
+export type ProductDetails  = Omit<Product, "product_id" | "created_at" | "updated_at">
+export type ProductResponse = Omit<Product, "deleted_at">
+
 type RecordId = number
 type DbResult<T> = 
     | { success: true; data: T }
     | { success: false; error: string; code?: string };
 
-
 interface ProductRepo {
     createProduct(db: Database, product_details: ProductDetails): RecordId | { error: string }
     update_product(db: Database, product_id: number, updated_details: Partial<ProductDetails>): boolean
-    get_products_by_code(db: Database, product_code: string): DbResult<Array<Product>> 
-    get_products_by_barcode(db: Database, barcode: string): DbResult<Array<Product>> 
-    get_products_by_category(db: Database, category_id: number): DbResult<Array<Product>> 
-    get_products_by_supplier(db: Database, supplier_id: number): DbResult<Array<Product>> 
-    get_active_products(db: Database): DbResult<Array<Product>>
-    get_all_products(db: Database): DbResult<Array<Product>> 
+    get_products_by_code(db: Database, product_code: string): DbResult<Array<ProductResponse>> 
+    get_products_by_barcode(db: Database, barcode: string): DbResult<Array<ProductResponse>> 
+    get_products_by_category(db: Database, category_id: number): DbResult<Array<ProductResponse>> 
+    get_products_by_supplier(db: Database, supplier_id: number): DbResult<Array<ProductResponse>> 
+    get_active_products(db: Database): DbResult<Array<ProductResponse>>
+    get_all_products(db: Database): DbResult<Array<ProductResponse>> 
     delete_all_products(db: Database): void 
-    delete_product(db: Database, product_name: string): void // are there gonna be other deletes too?
-
+    delete_product(db: Database, product_name: string): void //are there gonna be other deletes too? hard or soft delete 
 }
 
 export class ProductRepository implements ProductRepo {
 
-    get_products_by_code(db: Database, product_code: string): DbResult<Array<Product>>  {
-       const products = db.query("SELECT * FROM products where product_code= ?").all(product_code) as Product[]
-       return { success:true, data: products }
+    get_products_by_code(db: Database, product_code: string): DbResult<Array<ProductResponse>>  {
+       const products = db.query("SELECT * FROM products where product_code= ?").all(product_code) as ProductResponse[]
+       return { success: true, data: products }
     }
 
-    get_products_by_barcode(db: Database, barcode: string): DbResult<Array<Product>>  {
-       const products = db.query("SELECT * FROM products where barcode = ?").all(barcode) as Product[]
-       return { success:true, data: products }
+    get_products_by_barcode(db: Database, barcode: string): DbResult<Array<ProductResponse>>  {
+       const products = db.query("SELECT * FROM products where barcode = ?").all(barcode) as ProductResponse[]
+       return { success: true, data: products }
     }
 
-    get_products_by_category(db: Database, category_id: number): DbResult<Array<Product>> {
-       const products = db.query("SELECT * FROM products where category_id = ?").all(category_id) as Product[]
-       return { success:true, data: products }
+    get_products_by_category(db: Database, category_id: number): DbResult<Array<ProductResponse>> {
+       const products = db.query("SELECT * FROM products where category_id = ?").all(category_id) as ProductResponse[]
+       return { success: true, data: products }
     }
 
-    get_products_by_supplier(db: Database, supplier_id: number): DbResult<Array<Product>>  {
-       const products = db.query("SELECT * FROM products where supplier_id = ?").all(supplier_id) as Product[]
-       return { success:true, data: products }
+    get_products_by_supplier(db: Database, supplier_id: number): DbResult<Array<ProductResponse>>  {
+       const products = db.query("SELECT * FROM products where supplier_id = ?").all(supplier_id) as ProductResponse[]
+       return { success: true, data: products }
     }
 
-    get_active_products(db: Database): DbResult<Array<Product>> {
-       const products = db.query("SELECT * FROM products where is_active = ?").all(true) as Product[]
-       return { success:true, data: products }
+    get_active_products(db: Database): DbResult<Array<ProductResponse>> {
+       const products = db.query("SELECT * FROM products where is_active = ?").all(true) as ProductResponse[]
+       return { success: true, data: products }
     }
     
     createProduct(db: Database, product_details: ProductDetails): RecordId | { error: string } {
@@ -97,12 +97,13 @@ export class ProductRepository implements ProductRepo {
     
     }
 
-    get_single_product(db: Database): DbResult<Product> { // is this necessary ?
-        throw new Error("Method not implemented.");
+    get_single_product(db: Database, product_id: number): DbResult<ProductResponse> { // is this necessary ?
+       const products = db.query("SELECT * FROM products where product_id = ?").get(product_id) as ProductResponse
+       return { success: true, data: products }
     }
 
-    get_all_products(db: Database): DbResult<Array<Product>> {
-       const products = db.query("SELECT * FROM products where is_active = ?").all() as Product[]
+    get_all_products(db: Database): DbResult<Array<ProductResponse>> {
+       const products = db.query("SELECT * FROM products").all() as ProductResponse[]
        return { success: true, data: products }
     }
 
@@ -115,8 +116,8 @@ export class ProductRepository implements ProductRepo {
        query.run(product_name)
     }
 
-    update_product(db: Database, product_id: number, updated_details: Partial<ProductDetails>): boolean {
-        const { query, values } = this.buildUpdateQuery('products', updated_details, { product_id })
+    update_product(db: Database, product_id: RecordId, updated_details: Partial<ProductDetails>): boolean {
+        const { query, values } = buildUpdateQuery('products', updated_details, { product_id })
         
         if (!query) return false // No fields to update
         
@@ -126,8 +127,9 @@ export class ProductRepository implements ProductRepo {
         return res.changes > 0
     }
 
-    // Helper method for building dynamic updates
-    private buildUpdateQuery(
+}
+
+export function buildUpdateQuery(
         table: string, 
         updates: Record<string, any>, 
         where: Record<string, any>
@@ -161,5 +163,3 @@ export class ProductRepository implements ProductRepo {
         `
         return { query, values: [...values, ...whereValues] }
     }
-
-}

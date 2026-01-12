@@ -12,6 +12,9 @@ import { UserRepository } from "./repository/user_repo";
 import { PasswordResetRepository } from "./repository/password_reset_repo";
 import { AuditLogRepository, Log } from "./repository/audit_log_repo";
 import { PasswordReset, User } from "./models"
+import { ProductService } from "./services/product"
+import { Supplier as SupplierService } from "./services/supplier"
+import { ProductRepository } from "./repository/product_repo";
 
 interface RoleData {
     [key: string]: string;
@@ -33,7 +36,9 @@ const ROLE_PERMISSIONS: RoleData = {
     "cashier2": "perms4"
 }
 
-export class SqliteDatabase  {
+// break this into services
+
+export class SqliteDatabaseSerevices  {
 
     private db: Database
     private user_repo: UserRepository
@@ -51,6 +56,7 @@ export class SqliteDatabase  {
         this.user_repo           = new UserRepository()
         this.audit_log_repo      = new AuditLogRepository()
         this.password_reset_repo = new PasswordResetRepository()
+
         this.init(db)
     }
 
@@ -74,6 +80,14 @@ export class SqliteDatabase  {
         // const tableInfo = this.db.query(`PRAGMA table_info(users)`).all()
         // console.log('Table structure:', tableInfo)
 
+    }
+
+    product_service(){
+        return new ProductService()
+    }
+
+    supplier_service(){
+        return new SupplierService()
     }
 
     async insertNewUser(newUserDetails: SignupRequestForm): Promise<number> {
@@ -113,7 +127,7 @@ export class SqliteDatabase  {
         }
     }
 
-    async getPasswordResetRequestByEmail(email: string)  {
+    getPasswordResetRequestByEmail(email: string)  {
         const res = this.password_reset_repo.getPasswordResetRequestByEmail(this.db, email)
         if (res.success == true ){
             return res

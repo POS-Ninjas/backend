@@ -9,27 +9,26 @@ import { bearerAuth } from 'hono/bearer-auth'
 import { jwt, sign } from 'hono/jwt'
 import { validate_signup_request_form } from './auth/signup'
 
-import { SqliteDatabase } from './db/db_service'
-import {  validate_login_request_form } from './auth/login'
+import { SqliteDatabaseSerevices } from './db/db_service'
+import { validate_login_request_form } from './auth/login'
 import { PasswordResetRequestForm } from './db/models'
 import { sendPasswordResetEmail } from './auth/email_sender'
 
 const app = new Hono()
 
-type ApiResponse<T = any> = {
-  success: boolean;
-  data: T;
-  timestamp: string;
-};
+async function bootstrap(){
+  pinologger.info("App started")
+}
 
-// app.use('/static/*', serveStatic({ root: './'}))
-app.use('/favicon.ico', serveStatic({ path: './favicon.ico' }))
-// app.use(logger())
+
 app.use(poweredBy())
+
 
 const token = 'honoiscool'
 
-const db = new SqliteDatabase("concrete")
+const db = new SqliteDatabaseSerevices("concrete")
+
+
 // app.use(
 //   '/auth/*',
 //   jwt({
@@ -43,6 +42,12 @@ app.use(
     token
   })
 )
+
+type ApiResponse<T = any> = {
+  success: boolean;
+  data: T;
+  timestamp: string;
+};
 
 app.post('/auth/signup', async (c) => { 
 
@@ -235,11 +240,12 @@ app.post('/reset-password', async (c) => {
 
       // send email here
         sendPasswordResetEmail(user, token)
+
         return c.json({
           success: true,
-          data: {
-            "redirect-link": `/reset-password/${token}`
-          },
+          // data: {
+          //   "redirect-link": `/reset-password/${token}`
+          // },
           timestamp: new Date().toISOString()
         })
     } else {

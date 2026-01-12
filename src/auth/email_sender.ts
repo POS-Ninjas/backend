@@ -14,7 +14,7 @@ import { logger } from "../logger";
 import { User } from "../db/models";
 
 
-export const LIST_OF_TEMPLATES = "ResetPassword, WelcomeUserEmail,"
+export const LIST_OF_TEMPLATES = "ResetPassword, WelcomeUserEmail, PasswordChangedSuccessfully"
 
 // this must run where the app starts
 async function createAndRegisterTemplate(template_name: string = ""){
@@ -23,7 +23,7 @@ async function createAndRegisterTemplate(template_name: string = ""){
   const TEXT_FORMAT_BODY = `
     <h1>Reset Password</h1>
     <p>You requested to reset your password, {{contact.firstName}}.</p>
-    <p>Follow this link to reset your password: {{contact.emailResetLink}} </p>
+    <p>Follow this link to reset your password: <a>{{contact.emailResetLink}}</a> </p>
     <p>If it wasn't you, please ignore this message.</p>
   `;
 
@@ -103,11 +103,7 @@ async function sendResetPasswordEmail(email: string, name: string, resetLink: st
 }
 
 
-// create templated email 
-
-
 const run = async () => {
-
 
   // await createAndRegisterTemplate()
 
@@ -125,9 +121,9 @@ export async function sendPasswordResetEmail(user: User, token: string){
 
   const res = await checkIfTemplateExists("ResetPasswordNew") as boolean
 
-  // ADD the BASE_URL to the constructed link
+  // ADD the BASE_URL to the constructed link ? env var?
   if (res){
-    const construct_reset_link = `/reset-link/${token}`
+    const construct_reset_link = `/reset-password/${token}`
     await sendResetPasswordEmail(user.email, user.first_name, construct_reset_link, "ResetPasswordNew");
   } else {
     logger.error(`Template does not exist, use the list of available Templates ${LIST_OF_TEMPLATES}`)

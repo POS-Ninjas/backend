@@ -105,7 +105,7 @@ export class ClientRepository implements ClientRepo {
       values.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm)
     }
 
-    queryString += ` ORDER BY created_at DESC`
+    queryString += `ORDER BY created_at DESC`
 
     const query = this.db.query(queryString)
     const results = query.all(...values) as ClientDetails[]

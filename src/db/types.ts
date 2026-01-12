@@ -4,7 +4,7 @@ import { User } from './models'
 
 // remove the functions in this and put it UserRepo, pass the db around
 type RecordId = number
-export interface Database {
+interface Database {
 
     insertNewUser(user: SignupRequestForm): Promise<RecordId>
     // getAllUsers(): Promise<Array<User>>
