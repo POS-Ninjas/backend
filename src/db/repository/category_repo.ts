@@ -14,7 +14,7 @@ interface CategoryRepo {
     get_category(db: Database, id: RecordId): DbResult<Category>
     get_all_category(db: Database): DbResult<Array<Category>>
     update_category(db: Database, category_id: RecordId, category_details: Category): boolean
-    delete_category(db: Database): void
+    delete_category(db: Database, category_id: number): void
 }
 
 class CategoryRepository implements CategoryRepo {
@@ -48,12 +48,12 @@ class CategoryRepository implements CategoryRepo {
     }
 
     get_category(db: Database, category_id: RecordId): DbResult<Category> {
-        const products = db.query("SELECT * FROM products where category_id = ?").get(category_id) as Category
+        const products = db.query("SELECT * FROM categories where category_id = ?").get(category_id) as Category
         return { success: true, data: products }
     }
     
     get_all_category(db: Database): DbResult<Array<Category>> {
-        const categories = db.query("SELECT * FROM products").all() as Category[]
+        const categories = db.query("SELECT * FROM categories").all() as Category[]
         return { success: true, data: categories }
     }
 
@@ -68,8 +68,8 @@ class CategoryRepository implements CategoryRepo {
         return res.changes > 0
     }
 
-    delete_category(db: Database): void {
-        throw new Error("Method not implemented.");
+    delete_category(db: Database, category_id: number): void {
+        db.query("DELETE FROM categories where category_id = ?").run(category_id)
     }
     
 }

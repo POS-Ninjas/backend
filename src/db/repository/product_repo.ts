@@ -92,7 +92,7 @@ export class ProductRepository implements ProductRepo {
         } catch (error: any) {
             
             logger.error("Database error inserting product: ", error);
-            return { error: "Failed to create user" };
+            return { error: "Failed to create product" };
         }
     
     }
@@ -119,7 +119,7 @@ export class ProductRepository implements ProductRepo {
     update_product(db: Database, product_id: RecordId, updated_details: Partial<ProductDetails>): boolean {
         const { query, values } = buildUpdateQuery('products', updated_details, { product_id })
         
-        if (!query) return false // No fields to update
+        if (!query) return false 
         
         const stmt = db.query(query)
         const res = stmt.run(...values)
