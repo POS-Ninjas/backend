@@ -1,20 +1,20 @@
-import { SignupRequestForm } from "../auth/signup";
+import { SignupRequestForm } from "./auth/signup";
 import { 
     LoginRequestWithEmailForm, 
     LoginRequestWithUsernameForm 
-} from "../auth/login";
-import { Audit_Log, PasswordResetRequestForm } from "./models"
+} from "./auth/login";
+import { Audit_Log, PasswordResetRequestForm } from "./db/models"
 
 
 import { Database  } from "bun:sqlite"
-import { logger } from '../logger'
-import { UserRepository } from "./repository/user_repo";
-import { PasswordResetRepository } from "./repository/password_reset_repo";
-import { AuditLogRepository, Log } from "./repository/audit_log_repo";
-import { PasswordReset, User } from "./models"
+import { logger } from './logger'
+import { UserRepository } from "./db/repository/user_repo";
+import { PasswordResetRepository } from "./db/repository/password_reset_repo";
+import { AuditLogRepository, Log } from "./db/repository/audit_log_repo";
+import { PasswordReset, User } from "./db/models"
 import { ProductService } from "./services/product"
-import { Supplier as SupplierService } from "./services/supplier"
-import { ProductRepository } from "./repository/product_repo";
+import { SupplierService } from "./services/supplier"
+import { ProductRepository } from "./db/repository/product_repo";
 
 interface RoleData {
     [key: string]: string;
@@ -38,9 +38,9 @@ const ROLE_PERMISSIONS: RoleData = {
 
 // break this into services
 
-export class SqliteDatabaseSerevices  {
+class SqliteDatabaseServices  {
 
-    private db: Database
+    database: Database
     private user_repo: UserRepository
     private password_reset_repo: PasswordResetRepository
     private audit_log_repo: AuditLogRepository
@@ -48,9 +48,9 @@ export class SqliteDatabaseSerevices  {
     constructor(db: string){
 
         if (db == "concrete"){
-            this.db = new Database("./concrete.db", {strict: true})
+            this.database = new Database("./test.db", {strict: true})
         } else {
-            this.db = new Database(":memory:", {strict: true})
+            this.database = new Database(":memory:", {strict: true})
         }
         
         this.user_repo           = new UserRepository()
@@ -63,14 +63,14 @@ export class SqliteDatabaseSerevices  {
     private async init(db: string){
 
         logger.info("Starting sqlite database")
-        this.db.run('PRAGMA foreign_keys = ON')
+        this.database.run('PRAGMA foreign_keys = ON')
         const schema = await Bun.file("./pos_tables.sql").text()
 
         if (db == "memory"){
             logger.info("running schema in memory")
-            this.db.run(schema)
+            this.database.run(schema)
         } else {
-            logger.info(`using concrete implementation look for ${this.db.filename} file in project dir`)
+            logger.info(`using concrete implementation look for ${this.database.filename} file in project dir`)
             return
             // this.db.run(schema)
         }
@@ -90,18 +90,19 @@ export class SqliteDatabaseSerevices  {
         return new SupplierService()
     }
 
+    // move these into user service
     async insertNewUser(newUserDetails: SignupRequestForm): Promise<number> {
-        const res = await this.user_repo.insertNewUser(this.db, newUserDetails)
+        const res = await this.user_repo.insertNewUser(this.database, newUserDetails)
         return res as number
     }
 
     async updateUserPassword(userId: number, updated_password: string): Promise<number> {
-        const res = await this.user_repo.updateUserPassword(this.db, userId, updated_password)
+        const res = await this.user_repo.updateUserPassword(this.database, userId, updated_password)
         return res as number
     }
 
     getUserByEmail(email: string): User | string {
-        const res = this.user_repo.getUserByEmail(this.db, email)
+        const res = this.user_repo.getUserByEmail(this.database, email)
         if (res.success == true){
             return res.data
         } else {
@@ -110,7 +111,7 @@ export class SqliteDatabaseSerevices  {
     }
 
     getUserByUsername(newUserDetails: LoginRequestWithUsernameForm): User | string {
-        const res = this.user_repo.getUserByUsername(this.db, newUserDetails.username)
+        const res = this.user_repo.getUserByUsername(this.database, newUserDetails.username)
         if (res.success == true){
             return res.data
         } else {
@@ -119,7 +120,7 @@ export class SqliteDatabaseSerevices  {
     }
 
     async insertPasswordResetForm(passwordResetForm: PasswordResetRequestForm): Promise<number | string>{
-        const res = await this.password_reset_repo.createPasswordResetRequest(this.db, passwordResetForm)
+        const res = await this.password_reset_repo.createPasswordResetRequest(this.database, passwordResetForm)
         if (typeof res == 'number'){
             return res
         } else {
@@ -128,7 +129,7 @@ export class SqliteDatabaseSerevices  {
     }
 
     getPasswordResetRequestByEmail(email: string)  {
-        const res = this.password_reset_repo.getPasswordResetRequestByEmail(this.db, email)
+        const res = this.password_reset_repo.getPasswordResetRequestByEmail(this.database, email)
         if (res.success == true ){
             return res
         } else {
@@ -138,7 +139,7 @@ export class SqliteDatabaseSerevices  {
     }
 
     async getPasswordResetRequestByUserId(user_id: number)  {
-        const res = this.password_reset_repo.getPasswordResetRequestByUserId(this.db, user_id)
+        const res = this.password_reset_repo.getPasswordResetRequestByUserId(this.database, user_id)
         if (res.success == true ){
             return res
         } else {
@@ -148,7 +149,7 @@ export class SqliteDatabaseSerevices  {
     }
 
     async getPasswordResetRequestByExpiry(expires_at: number)  {
-        const res = this.password_reset_repo.getPasswordResetRequestByExpiry(this.db, expires_at)
+        const res = this.password_reset_repo.getPasswordResetRequestByExpiry(this.database, expires_at)
         if (res.success == true ){
             return res
         } else {
@@ -158,7 +159,7 @@ export class SqliteDatabaseSerevices  {
     }
 
     async getPasswordResetRequestByToken(token: string)  {
-        const res = this.password_reset_repo.getPasswordResetRequestByToken(this.db, token)
+        const res = this.password_reset_repo.getPasswordResetRequestByToken(this.database, token)
         if (res.success == true ){
             return res
         } else {
@@ -168,7 +169,7 @@ export class SqliteDatabaseSerevices  {
     }
 
     async markTokenasUsed(token: string): Promise<boolean> {
-        const res = await this.password_reset_repo.markPasswordResetTokenAsUsed(this.db, token)
+        const res = await this.password_reset_repo.markPasswordResetTokenAsUsed(this.database, token)
 
         if (typeof res == 'number'){
             return true
@@ -179,7 +180,7 @@ export class SqliteDatabaseSerevices  {
     }
 
     async create_audit_log(log: Log) {
-        const res = this.audit_log_repo.create_audit_log(this.db, log)
+        const res = this.audit_log_repo.create_audit_log(this.database, log)
 
         if (typeof res == 'number' ){
           return res
@@ -190,7 +191,7 @@ export class SqliteDatabaseSerevices  {
     }
 
     get_logs(): Array<Audit_Log> | string {
-        const res = this.audit_log_repo.get_all_audit_logs(this.db)
+        const res = this.audit_log_repo.get_all_audit_logs(this.database)
         if (res.success == true ){
             return res.data
         } else {
@@ -201,7 +202,7 @@ export class SqliteDatabaseSerevices  {
 
     get_log_by_user_id(user_id: number): Array<Audit_Log> | string {
 
-        const res = this.audit_log_repo.get_logs_of_user(this.db, user_id)
+        const res = this.audit_log_repo.get_logs_of_user(this.database, user_id)
 
         if (res.success == true ){
             return res.data
@@ -223,7 +224,7 @@ export class SqliteDatabaseSerevices  {
                 ) 
                 VALUES (?, ?, ?)
                 `
-            const query = this.db.query(queryString)
+            const query = this.database.query(queryString)
 
             query.run(
                 name,
@@ -233,14 +234,12 @@ export class SqliteDatabaseSerevices  {
         }
     }
 
-
-
     close() {
-        if (this.db) {
+        if (this.database) {
             logger.info("Gracefully stopping the database");
             
             try {
-                this.db.close();
+                this.database.close();
                 logger.info("Database closed successfully");
             } catch (err) {
                 logger.error("Error closing database:", err);
@@ -249,3 +248,5 @@ export class SqliteDatabaseSerevices  {
     }
 
 }
+
+export const db = new SqliteDatabaseServices("concrete")

@@ -10,7 +10,7 @@ import { Database } from 'bun:sqlite'
 
 describe('user login flow', () => {
 
-  let users : {
+  let users: {
       emailUser: string
       usernameUser: string
       password: string

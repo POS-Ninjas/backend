@@ -1,6 +1,6 @@
-import { SupplierRepository, SupplierDetails } from "../repository/supplier_repo"
+import { SupplierRepository, SupplierDetails } from "../db/repository/supplier_repo"
 import { Database  } from "bun:sqlite"
-import { Supplier } from "../models"
+import { Supplier } from "../db/models"
 
 
 export class SupplierService  { 

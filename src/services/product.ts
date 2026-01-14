@@ -1,4 +1,4 @@
-import { ProductRepository, ProductDetails, ProductResponse } from "../repository/product_repo"
+import { ProductRepository, ProductDetails, ProductResponse } from "../db/repository/product_repo"
 import { Database  } from "bun:sqlite"
 
 // DONE

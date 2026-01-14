@@ -1,5 +1,4 @@
 import { serveStatic } from 'hono/bun'
-import { logger } from 'hono/logger'
 import { logger as pinologger } from './logger'
 
 import { poweredBy } from 'hono/powered-by'
@@ -9,10 +8,11 @@ import { bearerAuth } from 'hono/bearer-auth'
 import { jwt, sign } from 'hono/jwt'
 import { validate_signup_request_form } from './auth/signup'
 
-import { SqliteDatabaseSerevices } from './db/db_service'
+import { db } from './db_service'
 import { validate_login_request_form } from './auth/login'
 import { PasswordResetRequestForm } from './db/models'
 import { sendPasswordResetEmail } from './auth/email_sender'
+import  products  from './routes/products'
 
 const app = new Hono()
 
@@ -20,13 +20,9 @@ async function bootstrap(){
   pinologger.info("App started")
 }
 
-
 app.use(poweredBy())
 
-
 const token = 'honoiscool'
-
-const db = new SqliteDatabaseSerevices("concrete")
 
 
 // app.use(
@@ -48,6 +44,8 @@ type ApiResponse<T = any> = {
   data: T;
   timestamp: string;
 };
+
+app.route('/', products)
 
 app.post('/auth/signup', async (c) => { 
 
@@ -115,7 +113,7 @@ app.post('/login', async (c) => {
 
   } else if ("email" in validatedForm) {
 
-    const result = (await db.getUserByEmail(validatedForm.email))
+    const result = (db.getUserByEmail(validatedForm.email))
     
     let stored_password_hash;
 
@@ -145,11 +143,14 @@ app.post('/login', async (c) => {
           timestamp: new Date().toISOString()
         }
 
+      // TODO - add action log that user logged in  
       pinologger.info("successfully authenticated user, returning response")
       pinologger.info(response)
 
       return c.json(response)
     } else {
+
+      // TODO - add action log that user tried to logged in with wrong password, do for the rest
       return c.json({
         success: false,
         data: {"reason": "Wrong Password, please try again"},
@@ -159,7 +160,7 @@ app.post('/login', async (c) => {
 
   } else if ("username" in validatedForm) {
 
-    const result = (await db.getUserByUsername(validatedForm))
+    const result = db.getUserByUsername(validatedForm)
     let stored_password_hash;
 
     if(result && typeof result === 'object' && 'email' in result) {
@@ -171,11 +172,9 @@ app.post('/login', async (c) => {
           data: {"reason": "could not find user"},
           timestamp: new Date().toISOString()
       })
-
     }
 
     const isMatch = await Bun.password.verify(validatedForm.password, stored_password_hash)
-
     const payload = {
       sub: validatedForm.username,
       exp: Math.floor(Date.now() / 1000) + 3600,
@@ -195,7 +194,6 @@ app.post('/login', async (c) => {
       pinologger.info(response)
 
       return c.json(response)
-
     } else {
       pinologger.info("could not authenticate user, returning response")
       
@@ -205,9 +203,7 @@ app.post('/login', async (c) => {
           timestamp: new Date().toISOString()
       })
     }
-
   } 
-
 })
 
 app.post('/reset-password', async (c) => {
