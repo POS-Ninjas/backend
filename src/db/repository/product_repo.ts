@@ -14,20 +14,21 @@ type DbResult<T> =
 interface ProductRepo {
     createProduct(db: Database, product_details: ProductDetails): RecordId | { error: string }
     update_product(db: Database, product_id: number, updated_details: Partial<ProductDetails>): boolean
-    get_products_by_code(db: Database, product_code: string): DbResult<Array<ProductResponse>> 
+    // the get calls return a [] or a single product?
+    get_products_by_code(db: Database, product_code: string): DbResult<ProductResponse>
     get_products_by_barcode(db: Database, barcode: string): DbResult<Array<ProductResponse>> 
     get_products_by_category(db: Database, category_id: number): DbResult<Array<ProductResponse>> 
     get_products_by_supplier(db: Database, supplier_id: number): DbResult<Array<ProductResponse>> 
     get_active_products(db: Database): DbResult<Array<ProductResponse>>
     get_all_products(db: Database): DbResult<Array<ProductResponse>> 
-    delete_all_products(db: Database): void 
-    delete_product(db: Database, product_name: string): void //are there gonna be other deletes too? hard or soft delete 
+    delete_all_products(db: Database): void // delete all products 
+    delete_product(db: Database, product_name: string): void // are there gonna be other deletes too? hard or soft delete 
 }
 
 export class ProductRepository implements ProductRepo {
 
-    get_products_by_code(db: Database, product_code: string): DbResult<Array<ProductResponse>>  {
-       const products = db.query("SELECT * FROM products where product_code= ?").all(product_code) as ProductResponse[]
+    get_products_by_code(db: Database, product_code: string): DbResult<ProductResponse>  {
+       const products = db.query("SELECT * FROM products where product_code= ?").get(product_code) as ProductResponse
        return { success: true, data: products }
     }
 

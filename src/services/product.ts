@@ -30,8 +30,18 @@ export class ProductService  {
         }
     }
 
+    getProductsById(db: Database, id: number): ProductResponse | string {
+        const res = this.repo.get_single_product(db, id)
+
+        if (res.success == true){
+            return res.data
+        } else {
+            return res.error
+        }
+    }
+
     //this returns products but user must filter for a unique product 
-    getProductsByCode(db: Database, product_code: string): ProductResponse[] | string {
+    getProductByCode(db: Database, product_code: string): ProductResponse | string {
         const res = this.repo.get_products_by_code(db, product_code)
 
         if (res.success == true){
