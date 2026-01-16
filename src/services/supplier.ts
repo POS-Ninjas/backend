@@ -71,8 +71,8 @@ export class SupplierService  {
         }
     }
 
-    deleteSupplier(db: Database, supplier_name: string){
-        this.repo.delete_supplier(db, supplier_name)
+    deleteSupplier(db: Database, id: number){
+        this.repo.delete_supplier(db, id)
     }
 
 }

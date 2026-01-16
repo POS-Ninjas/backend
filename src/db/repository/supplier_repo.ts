@@ -18,7 +18,7 @@ interface SupplierRepo {
     get_suppliers_by_tin(db: Database, tin: number): DbResult<Array<Supplier>> 
     get_active_suppliers(db: Database): DbResult<Array<Supplier>>
     get_all_suppliers(db: Database): DbResult<Array<Supplier>>
-    delete_supplier(db: Database, supplier_name: string): void
+    delete_supplier(db: Database, id: number): void
 
 }
 
@@ -91,9 +91,9 @@ export class SupplierRepository implements SupplierRepo {
     }
 
     // use id or name ?
-    delete_supplier(db: Database, supplier_name: string): void {
-       const query = db.query("DELETE * FROM products WHERE supplier_name = ?")
-       query.run(supplier_name)
+    delete_supplier(db: Database, id: number): void {
+       const query = db.query("DELETE * FROM products WHERE id = ?")
+       query.run(id)
     }
 
 }

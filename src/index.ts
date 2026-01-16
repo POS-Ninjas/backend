@@ -13,6 +13,7 @@ import { validate_login_request_form } from './auth/login'
 import { PasswordResetRequestForm } from './db/models'
 import { sendPasswordResetEmail } from './auth/email_sender'
 import  products  from './routes/products'
+import  suppliers  from './routes/suppliers'
 
 const app = new Hono()
 
@@ -46,6 +47,7 @@ type ApiResponse<T = any> = {
 };
 
 app.route('/', products)
+app.route('/', suppliers)
 
 app.post('/auth/signup', async (c) => { 
 
