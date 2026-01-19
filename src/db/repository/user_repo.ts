@@ -1,11 +1,12 @@
-import { PasswordReset, User } from "../models"
+import { PasswordReset, Product, User } from "../models"
 import { SignupRequestForm } from '../../auth/signup'
 import { Database  } from "bun:sqlite"
 import { logger } from "../../logger"
 
-type RecordId = number
-type UserDetails = SignupRequestForm
-type UpdateUserDetails = { username: string } & SignupRequestForm 
+export type RecordId          = number
+export type UserDetails       = SignupRequestForm
+export type UpdateUserDetails = { username: string } & SignupRequestForm 
+export type UserResponse      = Omit<User, "deleted_at">
 
 type DbResult<T> = 
     | { success: true; data: T }
@@ -14,10 +15,10 @@ type DbResult<T> =
 interface UserRepo {
     insertNewUser(db: Database, user: SignupRequestForm): Promise<RecordId | { error: string }>
     updateUserDetails(db: Database,  userId: number,  user: UserDetails): Promise<boolean>
-    getAllUsers(db: Database): DbResult<Array<User>>
-    getUserByEmail(db: Database, email: string): DbResult<User>
-    getUserByUsername(db: Database, username: string): DbResult<User>
-    getUserByRolename(db: Database, role: string): DbResult<User[]> // ask questions, will this be multiple or oen
+    getAllUsers(db: Database): DbResult<Array<UserResponse>>
+    getUserByEmail(db: Database, email: string): DbResult<UserResponse>
+    getUserByUsername(db: Database, username: string): DbResult<UserResponse>
+    getUserByRolename(db: Database, role: string): DbResult<UserResponse[]> // ask questions, will this be multiple or oen
     deleteUser(db: Database, username: string): void
 }
 
@@ -113,29 +114,41 @@ export class UserRepository implements UserRepo {
         return query.run(hashedPassword, userId).lastInsertRowid
     }
 
-    getAllUsers(db: Database): DbResult<Array<User>> {
-        const allUsers = db.query("select * from users").all() as User[]
+    getAllUsers(db: Database): DbResult<Array<UserResponse>> {
+        const allUsers = db.query("select * from users").all() as UserResponse[]
         return { success:true, data: allUsers }
     }
 
-    getUserByEmail(db: Database, email: string): DbResult<User> {
-        const user = db.query("SELECT * FROM users WHERE email = ?").get(email) as User
+    getUserByEmail(db: Database, email: string): DbResult<UserResponse> {
+        const user = db.query("SELECT * FROM users WHERE email = ?").get(email) as UserResponse
         return { success:true, data: user }
     }
 
-    getUserByUsername(db: Database, username: string): DbResult<User> {
-        const user = db.query("SELECT * FROM users WHERE username = ?").get(username) as User
+    getUserByUsername(db: Database, username: string): DbResult<UserResponse> {
+        const user = db.query("SELECT * FROM users WHERE username = ?").get(username) as UserResponse
         return { success: true, data: user }
     }
 
-    getUserByRolename(db: Database, role: string): DbResult<User[]> {
-        const user = db.query("SELECT * FROM users WHERE role = ?").all(role) as User[] 
+    getUserByRolename(db: Database, role: string): DbResult<UserResponse[]> {
+        const user = db.query("SELECT * FROM users WHERE role = ?").all(role) as UserResponse[] 
         return { success: true, data: user }
     }
+
+    getActiveUsers(db: Database): DbResult<UserResponse[]> {
+        const user = db.query("SELECT * FROM users WHERE is_active = ?").all(true) as UserResponse[] 
+        return { success: true, data: user }
+    }
+
 
     deleteUser(db: Database, username: string): void {
        const query = db.query("DELETE * FROM users WHERE username = ?")
        query.run(username)
     }
+
+    deleteUserById(db: Database, user_id: number): void {
+       const query = db.query("DELETE * FROM users WHERE username = ?")
+       query.run(user_id)
+    }
+    
     
 }

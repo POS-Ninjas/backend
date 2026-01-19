@@ -25,7 +25,6 @@ app.use(poweredBy())
 
 const token = 'honoiscool'
 
-
 // app.use(
 //   '/auth/*',
 //   jwt({
@@ -40,11 +39,7 @@ app.use(
   })
 )
 
-type ApiResponse<T = any> = {
-  success: boolean;
-  data: T;
-  timestamp: string;
-};
+
 
 app.route('/', products)
 app.route('/', suppliers)

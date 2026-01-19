@@ -11,10 +11,9 @@ import { logger } from './logger'
 import { UserRepository } from "./db/repository/user_repo";
 import { PasswordResetRepository } from "./db/repository/password_reset_repo";
 import { AuditLogRepository, Log } from "./db/repository/audit_log_repo";
-import { PasswordReset, User } from "./db/models"
 import { ProductService } from "./services/product"
 import { SupplierService } from "./services/supplier"
-import { ProductRepository } from "./db/repository/product_repo";
+import { UserService } from "./services/users";
 
 interface RoleData {
     [key: string]: string;
@@ -90,33 +89,8 @@ class SqliteDatabaseServices  {
         return new SupplierService()
     }
 
-    // move these into user service
-    async insertNewUser(newUserDetails: SignupRequestForm): Promise<number> {
-        const res = await this.user_repo.insertNewUser(this.database, newUserDetails)
-        return res as number
-    }
-
-    async updateUserPassword(userId: number, updated_password: string): Promise<number> {
-        const res = await this.user_repo.updateUserPassword(this.database, userId, updated_password)
-        return res as number
-    }
-
-    getUserByEmail(email: string): User | string {
-        const res = this.user_repo.getUserByEmail(this.database, email)
-        if (res.success == true){
-            return res.data
-        } else {
-            return res.error
-        }
-    }
-
-    getUserByUsername(newUserDetails: LoginRequestWithUsernameForm): User | string {
-        const res = this.user_repo.getUserByUsername(this.database, newUserDetails.username)
-        if (res.success == true){
-            return res.data
-        } else {
-            return res.error
-        }
+    users_service(){
+        return new UserService()
     }
 
     async insertPasswordResetForm(passwordResetForm: PasswordResetRequestForm): Promise<number | string>{
@@ -135,7 +109,6 @@ class SqliteDatabaseServices  {
         } else {
             return res.error
         }
-
     }
 
     async getPasswordResetRequestByUserId(user_id: number)  {
@@ -145,7 +118,6 @@ class SqliteDatabaseServices  {
         } else {
             return res.error
         }
-
     }
 
     async getPasswordResetRequestByExpiry(expires_at: number)  {
@@ -155,7 +127,6 @@ class SqliteDatabaseServices  {
         } else {
             return res.error
         }
-
     }
 
     async getPasswordResetRequestByToken(token: string)  {
@@ -165,7 +136,6 @@ class SqliteDatabaseServices  {
         } else {
             return res.error
         }
-
     }
 
     async markTokenasUsed(token: string): Promise<boolean> {
@@ -176,7 +146,6 @@ class SqliteDatabaseServices  {
         } else {
             return false
         }
-
     }
 
     async create_audit_log(log: Log) {
@@ -187,7 +156,6 @@ class SqliteDatabaseServices  {
         } else {
           return res.error
         }
-
     }
 
     get_logs(): Array<Audit_Log> | string {
@@ -197,7 +165,6 @@ class SqliteDatabaseServices  {
         } else {
             return res.error
         }
-
     }
 
     get_log_by_user_id(user_id: number): Array<Audit_Log> | string {

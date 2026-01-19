@@ -11,40 +11,67 @@ const products = new Hono()
 // products.use("*", authMiddleware)
 
 products
-    .get("/products/all", async (c) => {
-        const allproducts = product_services.getAllProducts(db.database)
+    .post("/products/create", async (c) => {
         pinologger.info("matched /products/all")
-        return c.json({
-            success: true,
-            data: allproducts,
-            timestamp: new Date().toISOString()
-        })
+        const product_info: ProductDetails = await c.req.json()
+        const product = product_services.createProduct(db.database, product_info)
+
+        if (typeof(product) == 'number'){
+            return c.json({
+                success: true,
+                data: product,
+                timestamp: new Date().toISOString()
+            })
+        } else {
+            return c.json({
+                success: false,
+                error: product,
+                timestamp: new Date().toISOString()
+            })
+        }
+    })
+
+products
+    .get("/products/all", async (c) => {
+        const response = product_services.getAllProducts(db.database)
+    
+        pinologger.info("matched /products/all")
+
+        if (typeof(response) == 'string'){
+            return c.json({
+                success: false,
+                error: response,
+                timestamp: new Date().toISOString()
+            })
+        } else {
+            return c.json({
+                success: true,
+                data: response,
+                timestamp: new Date().toISOString()
+            })
+        }
     })
 
 products
     .get("/products/active", async (c) => {
         pinologger.info("matched /products/active")
+        const response = product_services.getActiveProducts(db.database)
 
-        const allproducts = product_services.getActiveProducts(db.database)
-
-        return c.json({
-            success: true,
-            data: allproducts,
-            timestamp: new Date().toISOString()
-        })
+        if (typeof(response) == 'string'){
+            return c.json({
+                success: false,
+                error: response,
+                timestamp: new Date().toISOString()
+            })
+        } else {
+            return c.json({
+                success: true,
+                data: response,
+                timestamp: new Date().toISOString()
+            })
+        }
     })
 
-products
-    .get("/products/create", async (c) => {
-        pinologger.info("matched /products/create")
-        const product_details = await c.req.json()
-        const allproducts = product_services.getAllProducts(db.database)
-        return c.json({
-            success: true,
-            data: allproducts,
-            timestamp: new Date().toISOString()
-        })
-    })
 
 products
     .get("/products/:id", async (c) => {
@@ -59,7 +86,6 @@ products
                 timestamp: new Date().toISOString()
             })
         } else {
-
             return c.json({
                 success: true,
                 data: product,
@@ -69,7 +95,7 @@ products
     })
 
 products
-    .get("/products/update/:id", async (c) => {
+    .patch("/products/update/:id", async (c) => {
         pinologger.info("matched /products/update/:id")
         const id = c.req.param('id') as unknown as number
         const updated_details = await c.req.json() as ProductDetails
@@ -82,7 +108,6 @@ products
                 timestamp: new Date().toISOString()
             })
         } else {
-
             return c.json({
                 success: true,
                 data: product,
@@ -180,7 +205,7 @@ products
     })
 
 products
-    .get("/products/delete/:id", async (c) => {
+    .delete("/products/delete/:id", async (c) => {
         pinologger.info("matched /products/delete?name=something")
         const id = c.req.param('id') as unknown as number
 

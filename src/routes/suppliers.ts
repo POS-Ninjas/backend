@@ -8,24 +8,41 @@ const suppliers = new Hono()
 
 suppliers
     .get("/suppliers/all", async (c) => {
-        const allsuppliers = supplier_services.getAllSuppliers(db.database)
+        const response = supplier_services.getAllSuppliers(db.database)
         pinologger.info("matched /suppliers/all")
-        return c.json({
-            success: true,
-            data: allsuppliers,
-            timestamp: new Date().toISOString()
-        })
+
+        if (typeof(response) == 'string'){
+            return c.json({
+                success: false,
+                error: response,
+                timestamp: new Date().toISOString()
+            })
+        } else {
+            return c.json({
+                success: true,
+                data: response,
+                timestamp: new Date().toISOString()
+            })
+        }
     })
 
 suppliers
     .get("/suppliers/active", async (c) => {
-        const allsuppliers = supplier_services.getActiveSuppliers(db.database)
+        const response = supplier_services.getActiveSuppliers(db.database)
         pinologger.info("matched /suppliers/active")
-        return c.json({
-            success: true,
-            data: allsuppliers,
-            timestamp: new Date().toISOString()
-        })
+        if (typeof(response) == 'string'){
+            return c.json({
+                success: false,
+                error: response,
+                timestamp: new Date().toISOString()
+            })
+        } else {
+            return c.json({
+                success: true,
+                data: response,
+                timestamp: new Date().toISOString()
+            })
+        }
     })
 
 suppliers
@@ -57,43 +74,72 @@ suppliers
         if (tin) {
             pinologger.info("matched /suppliers?tin=23")
             const tin = c.req.query('tin') as unknown as number
-            const suppliers = supplier_services.getSuppliersByTin(db.database, tin)
+            const response = supplier_services.getSuppliersByTin(db.database, tin)
 
-            return c.json({
-                success: true,
-                data: suppliers,
-                timestamp: new Date().toISOString()
-            })
+            if (typeof(response) == 'string'){
+                return c.json({
+                    success: false,
+                    error: response,
+                    timestamp: new Date().toISOString()
+                })
+            } else {
+                return c.json({
+                    success: true,
+                    data: response,
+                    timestamp: new Date().toISOString()
+                })
+            }
         }
 
         if (phone) {
             pinologger.info("matched /suppliers?phone=23")
             const phone = c.req.query('phone') as unknown as number
-            const suppliers = supplier_services.getSuppliersByPhone(db.database, phone)
+            const response = supplier_services.getSuppliersByPhone(db.database, phone)
 
-            return c.json({
-                success: true,
-                data: suppliers,
-                timestamp: new Date().toISOString()
-            })
+            if (typeof(response) == 'string'){
+                return c.json({
+                    success: false,
+                    error: response,
+                    timestamp: new Date().toISOString()
+                })
+            } else {
+                return c.json({
+                    success: true,
+                    data: response,
+                    timestamp: new Date().toISOString()
+                })
+            }
         }
 
         if (company) {
             pinologger.info("matched /suppliers?company=23")
             const company = c.req.query('company') as string
-            const suppliers = supplier_services.getSuppliersByCompanyName(db.database, company)
+            const response = supplier_services.getSuppliersByCompanyName(db.database, company)
 
-            return c.json({
-                success: true,
-                data: suppliers,
-                timestamp: new Date().toISOString()
-            })
+            if (typeof(response) == 'string'){
+                return c.json({
+                    success: false,
+                    error: response,
+                    timestamp: new Date().toISOString()
+                })
+            } else {
+                return c.json({
+                    success: true,
+                    data: response,
+                    timestamp: new Date().toISOString()
+                })
+            }
         }
 
     })
 
 suppliers
-    .get("/suppliers/delete/:id", async (c) => {
+    .patch("/suppliers/update", async (c) => {
+        
+    })
+
+suppliers
+    .delete("/suppliers/delete/:id", async (c) => {
         pinologger.info("matched /suppliers/delete/:id")
         const id = c.req.param('id') as unknown as number
 
