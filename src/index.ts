@@ -14,6 +14,7 @@ import { PasswordResetRequestForm } from './db/models'
 import { sendPasswordResetEmail } from './auth/email_sender'
 import  products  from './routes/products'
 import  suppliers  from './routes/suppliers'
+import users from './routes/users'
 
 const app = new Hono()
 
@@ -39,8 +40,8 @@ app.use(
   })
 )
 
-
-
+// create health routes
+app.route('/', users)
 app.route('/', products)
 app.route('/', suppliers)
 
@@ -326,14 +327,7 @@ app.post('/reset-password/:token', async (c) => {
   }
 })
 
-app.get(
-  '/static/*',
-  serveStatic({
-    root: './',
-    rewriteRequestPath: (path) =>
-      path.replace(/^\/static/, '/static'),
-  })
-)
+
 
 export default {
   port: 5000,

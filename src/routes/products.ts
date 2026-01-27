@@ -14,7 +14,7 @@ products
     .post("/products/create", async (c) => {
         pinologger.info("matched /products/all")
         const product_info: ProductDetails = await c.req.json()
-        const product = product_services.createProduct(db.database, product_info)
+        const product = product_services.createProduct(product_info)
 
         if (typeof(product) == 'number'){
             return c.json({
@@ -33,7 +33,7 @@ products
 
 products
     .get("/products/all", async (c) => {
-        const response = product_services.getAllProducts(db.database)
+        const response = product_services.getAllProducts()
     
         pinologger.info("matched /products/all")
 
@@ -55,7 +55,7 @@ products
 products
     .get("/products/active", async (c) => {
         pinologger.info("matched /products/active")
-        const response = product_services.getActiveProducts(db.database)
+        const response = product_services.getActiveProducts()
 
         if (typeof(response) == 'string'){
             return c.json({
@@ -77,7 +77,7 @@ products
     .get("/products/:id", async (c) => {
         pinologger.info("matched /products/:id")
         const id = c.req.param('id') as unknown as number
-        const product = product_services.getProductsById(db.database, id)
+        const product = product_services.getProductsById(id)
 
         if (product == null){
             return c.json({
@@ -99,7 +99,7 @@ products
         pinologger.info("matched /products/update/:id")
         const id = c.req.param('id') as unknown as number
         const updated_details = await c.req.json() as ProductDetails
-        const product = product_services.updateProduct(db.database, id, updated_details)
+        const product = product_services.updateProduct(id, updated_details)
 
         if (product == null){
             return c.json({
@@ -118,8 +118,8 @@ products
 
 products
     .get("/products", async (c) => {
-        const product_code = c.req.query('code') as string
-        const bar_code     = c.req.query('barcode') as string
+        const product_code = c.req.query('code')     as string
+        const bar_code     = c.req.query('barcode')  as string
         const category     = c.req.query('category') as string 
         const supplier     = c.req.query('supplier') as string
 
@@ -149,9 +149,10 @@ products
             })
         }
 
+        // else blocks if the products return a error, return 500 error
         if (product_code) {
             pinologger.info("matched /products?code=12")
-            const product = product_services.getProductByCode(db.database, product_code)
+            const product = product_services.getProductByCode(product_code)
 
             if (product == null){
                 return c.json({
@@ -171,8 +172,9 @@ products
         if (bar_code) {
             pinologger.info("matched /products?barcode=23")
             const bar_code = c.req.query('barcode') as string
-            const products = product_services.getProductsByBarCode(db.database, bar_code)
+            const products = product_services.getProductsByBarCode(bar_code)
 
+            // check against errors
             return c.json({
                 success: true,
                 data: products,
@@ -183,7 +185,9 @@ products
         if (category) {
             pinologger.info("matched /products?category=cat_id") // #Ask do i construct the url by category name, get the id or just use the category_id
             const category = c.req.query('category') as unknown as number
-            const allproducts = product_services.getProductsByCategory(db.database, category)
+            const allproducts = product_services.getProductsByCategory(category)
+
+            // check against errors
             return c.json({
                 success: true,
                 data: allproducts,
@@ -194,8 +198,9 @@ products
         if (supplier) {
             pinologger.info("matched /products?supplier=") // #Ask do i construct the url by category name, get the id or just use the category_id
             const supplier = c.req.query('supplier') as unknown as number
-            pinologger.info(category)
-            const allproducts = product_services.getProductsBySupplier(db.database, supplier)
+            const allproducts = product_services.getProductsBySupplier(supplier)
+
+            // check against errors
             return c.json({
                 success: true,
                 data: allproducts,

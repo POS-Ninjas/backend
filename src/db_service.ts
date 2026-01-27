@@ -14,6 +14,8 @@ import { AuditLogRepository, Log } from "./db/repository/audit_log_repo";
 import { ProductService } from "./services/product"
 import { SupplierService } from "./services/supplier"
 import { UserService } from "./services/users";
+import { ProductRepository } from "./db/repository/product_repo";
+import { SupplierRepository } from "./db/repository/supplier_repo";
 
 interface RoleData {
     [key: string]: string;
@@ -40,9 +42,11 @@ const ROLE_PERMISSIONS: RoleData = {
 class SqliteDatabaseServices  {
 
     database: Database
-    private user_repo: UserRepository
+    private users_repo: UserRepository
     private password_reset_repo: PasswordResetRepository
     private audit_log_repo: AuditLogRepository
+    private products_repo: ProductRepository
+    private suppliers_repo: SupplierRepository
 
     constructor(db: string){
 
@@ -52,9 +56,11 @@ class SqliteDatabaseServices  {
             this.database = new Database(":memory:", {strict: true})
         }
         
-        this.user_repo           = new UserRepository()
+        this.users_repo          = new UserRepository(this.database)
         this.audit_log_repo      = new AuditLogRepository()
         this.password_reset_repo = new PasswordResetRepository()
+        this.products_repo       = new ProductRepository(this.database)
+        this.suppliers_repo      = new SupplierRepository(this.database)
 
         this.init(db)
     }
@@ -81,16 +87,17 @@ class SqliteDatabaseServices  {
 
     }
 
+    // pass the db cxn here 
     product_service(){
-        return new ProductService()
+        return new ProductService(this.products_repo)
     }
 
     supplier_service(){
-        return new SupplierService()
+        return new SupplierService(this.suppliers_repo)
     }
 
     users_service(){
-        return new UserService()
+        return new UserService(this.users_repo)
     }
 
     async insertPasswordResetForm(passwordResetForm: PasswordResetRequestForm): Promise<number | string>{

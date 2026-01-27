@@ -1,14 +1,11 @@
 import { Hono } from 'hono'
 import { logger as pinologger } from '../logger'
-import { authMiddleware } from '../middleware/authenticate'
-import { ProductDetails } from '../db/repository/product_repo'
-import { jwt, sign } from 'hono/jwt'
+import { sign } from 'hono/jwt'
 import { validate_signup_request_form } from '../auth/signup'
 
 import { db } from '../db_service'
 import { validate_login_request_form } from '../auth/login'
-import { PasswordResetRequestForm } from '../db/models'
-import { sendPasswordResetEmail } from '../auth/email_sender'
+import { UserDetails } from '../db/repository/user_repo'
 
 export type ApiResponse<T = any> = {
   success: boolean;
@@ -28,11 +25,10 @@ users
 
         if ("email" in validatedForm) {
 
-            const res = await user_services.createUser(db.database, validatedForm)
+            const res = await user_services.createUser( validatedForm)
 
             if (typeof(res) == 'number') {
                 pinologger.info("successfully created user, returning response")
-                pinologger.info(res)
                 return c.json({
                     success: false,
                     message: res,
@@ -50,7 +46,6 @@ users
         } else {
             // log the failure but should we add it to the audit table ?
             pinologger.error("Failed to sign up user")
-            pinologger.error(validatedForm)
         
             return c.json({
                 success: false,
@@ -77,7 +72,7 @@ users
     
         } else if ("email" in validatedForm) {
     
-        const result = (db.getUserByEmail(validatedForm.email))
+        const result = user_services.getUserByEmail( validatedForm.email)
         
         let stored_password_hash;
     
@@ -124,7 +119,7 @@ users
     
         } else if ("username" in validatedForm) {
     
-        const result = db.getUserByUsername(validatedForm)
+        const result = user_services.getUserByUsername( validatedForm.username)
         let stored_password_hash;
     
         if(result && typeof result === 'object' && 'email' in result) {
@@ -171,14 +166,9 @@ users
     })
 
 users
-    .get('/users', async (c) => {
-        pinologger.info("matched /users/")
-    })
-
-users
     .get('/users/active', async (c) => {
         pinologger.info("matched /users/active")
-        const res = user_services.getActiveUsers(db.database)
+        const res = user_services.getActiveUsers()
 
         if (typeof(res) == 'string'){
             return c.json({
@@ -187,18 +177,125 @@ users
                 timestamp: new Date().toISOString()
             })
         } else {
+  
             return c.json({
                 success: true,
-                error: res,
+                data: res,
                 timestamp: new Date().toISOString()
             })
         }
     })
 
 users
+    .get('/users/:id', async (c) => { 
+        const id   = c.req.param('id') as unknown as number
+        const user = user_services.getUserById(id)
+
+        if (typeof(user) == 'string'){
+
+            return c.json({
+                success: false,
+                error: `user with ${id} not found`,
+                timestamp: new Date().toISOString()
+            }, 404)
+            
+        } else {
+            return c.json({
+                success: true,
+                data: user,
+                timestamp: new Date().toISOString()
+            })
+        }
+    })
+
+
+users
+    .get('/users', async (c) => {
+        pinologger.info("matched /users")
+        const email    = c.req.query('email')
+        const username = c.req.query('username')
+        const role     = c.req.query('role')
+
+        if (email == ''){
+            return c.json({
+                success: false,
+                error: "please enter the email of user",
+                timestamp: new Date().toISOString()
+            }, 400)
+        } else if (username == ''){
+            return c.json({
+                success: false,
+                error: "please enter the name of user",
+                timestamp: new Date().toISOString()
+            }, 400)
+        } else if (role == ''){
+            return c.json({
+                success: false,
+                error: "please enter the product code",
+                timestamp: new Date().toISOString()
+            }, 400)
+        }
+
+        if (email){
+            pinologger.info("matched /users?email=")
+            const user = user_services.getUserByEmail(email)
+
+
+
+            
+        }
+
+        if (username){
+            pinologger.info("matched /users?username=")
+
+        }
+
+        if (role){
+            pinologger.info("matched /users?role")
+
+        }
+    })
+
+
+users
+    .patch('/users/:id', async (c) => {
+        pinologger.info("matched /users/delete?username=<username>")
+        const id   = c.req.param('id') 
+        const user_details = c.req.json() as unknown as UserDetails
+
+        if (id == '') {
+            return c.json({
+                success: false,
+                error: "please enter the id of user",
+                timestamp: new Date().toISOString()
+            })
+        }
+
+        const does_user_exist = user_services.doesUserExistsById( id as unknown as number)
+
+        const parsed_id = id as unknown as number 
+        const res = await user_services.updateUserDetails( parsed_id, user_details)
+
+        if(res){
+            return c.json({
+                success: true,
+                error: `User details with ${id} successfully updated`,
+                timestamp: new Date().toISOString()
+            })
+        } else {
+            return c.json({
+                success: false,
+                error: `User details with ${id} could not be successfully updated`,
+                timestamp: new Date().toISOString()
+            })
+        }
+    })
+
+// delete by username?
+users
     .delete('/users/delete', async (c) => {
         pinologger.info("matched /users/delete?username=<username>")
-        const username = c.req.param('username') as unknown as string
+        const username = c.req.query('username') as unknown as string
 
         if (username == '') {
             return c.json({
@@ -208,13 +305,12 @@ users
             })
         }
 
-        user_services.deleteUserByUsername(db.database, username)
-
+        user_services.deleteUserByUsername(username)
     })
 
 users
-    .get('/users/delete/:id', async (c) => {
-        pinologger.info("matched /users/deleete/id")
+    .delete('/users/delete/:id', async (c) => {
+        pinologger.info("matched /users/delete/id")
         const id = c.req.param('id') 
 
         if (id == '') {
@@ -225,9 +321,7 @@ users
             })
         }
 
-        user_services.deleteUserById(db.database, id as unknown as number)
-
+        user_services.deleteUserById(id as unknown as number)
     })
-
 
 export default users

@@ -5,14 +5,10 @@ import { Supplier } from "../db/models"
 
 export class SupplierService  { 
 
-    private repo: SupplierRepository
+    constructor(private repo: SupplierRepository){}
 
-    constructor(){
-        this.repo = new SupplierRepository()
-    }
-
-    createSupplier(db: Database, productDetails: SupplierDetails): number | string {
-        const res = this.repo.create_supplier(db, productDetails)
+    createSupplier(productDetails: SupplierDetails): number | string {
+        const res = this.repo.create_supplier( productDetails)
 
         if (typeof res == 'number'){
             return res
@@ -21,8 +17,8 @@ export class SupplierService  {
         }
     }
 
-    getAllSuppliers(db: Database): Supplier[] | string {
-        const res = this.repo.get_all_suppliers(db)
+    getAllSuppliers(): Supplier[] | string {
+        const res = this.repo.get_all_suppliers()
 
         if (res.success == true){
             return res.data
@@ -31,8 +27,8 @@ export class SupplierService  {
         }
     }
 
-    getSuppliersByCompanyName(db: Database, company_name: string): Supplier[] | string {
-        const res = this.repo.get_suppliers_by_company_name(db, company_name)
+    getSuppliersByCompanyName(company_name: string): Supplier[] | string {
+        const res = this.repo.get_suppliers_by_company_name( company_name)
 
         if (res.success == true){
             return res.data
@@ -41,8 +37,8 @@ export class SupplierService  {
         }
     }
 
-    getSuppliersByPhone(db: Database, phone: number): Supplier[] | string {
-        const res = this.repo.get_suppliers_by_phone(db, phone)
+    getSuppliersByPhone(phone: number): Supplier[] | string {
+        const res = this.repo.get_suppliers_by_phone( phone)
 
         if (res.success == true){
             return res.data
@@ -51,8 +47,8 @@ export class SupplierService  {
         }
     }
 
-    getSuppliersByTin(db: Database, tin: number): Supplier[] | string {
-        const res = this.repo.get_suppliers_by_tin(db, tin)
+    getSuppliersByTin(tin: number): Supplier[] | string {
+        const res = this.repo.get_suppliers_by_tin( tin)
 
         if (res.success == true){
             return res.data
@@ -61,8 +57,8 @@ export class SupplierService  {
         }
     }
 
-    getActiveSuppliers(db: Database): Supplier[] | string {
-        const res = this.repo.get_active_suppliers(db)
+    getActiveSuppliers(): Supplier[] | string {
+        const res = this.repo.get_active_suppliers()
 
         if (res.success == true){
             return res.data
@@ -71,8 +67,8 @@ export class SupplierService  {
         }
     }
 
-    deleteSupplier(db: Database, id: number){
-        this.repo.delete_supplier(db, id)
+    deleteSupplier(id: number){
+        this.repo.delete_supplier(id)
     }
 
 }

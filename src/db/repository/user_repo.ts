@@ -13,20 +13,20 @@ type DbResult<T> =
     | { success: false; error: string; code?: string };
 
 interface UserRepo {
-    insertNewUser(db: Database, user: SignupRequestForm): Promise<RecordId | { error: string }>
-    updateUserDetails(db: Database,  userId: number,  user: UserDetails): Promise<boolean>
-    getAllUsers(db: Database): DbResult<Array<UserResponse>>
-    getUserByEmail(db: Database, email: string): DbResult<UserResponse>
-    getUserByUsername(db: Database, username: string): DbResult<UserResponse>
-    getUserByRolename(db: Database, role: string): DbResult<UserResponse[]> // ask questions, will this be multiple or oen
-    deleteUser(db: Database, username: string): void
+    insertNewUser(user: SignupRequestForm): Promise<RecordId | { error: string }>
+    updateUserDetails(userId: number,  user: UserDetails): Promise<boolean>
+    getAllUsers(): DbResult<Array<UserResponse>>
+    getUserByEmail(email: string): DbResult<UserResponse>
+    getUserByUsername(username: string): DbResult<UserResponse>
+    getUserByRolename(role: string): DbResult<UserResponse[]> // ask questions, will this be multiple or oen
+    deleteUser(username: string): void
 }
 
 export class UserRepository implements UserRepo {
 
-    constructor(){}
+    constructor(private db: Database){}
 
-    async insertNewUser(db: Database, user: SignupRequestForm): Promise<RecordId | { error: string }> {
+    async insertNewUser(user: SignupRequestForm): Promise<RecordId | { error: string }> {
         const queryString = `
             INSERT INTO users (
                 username, password_hash,
@@ -37,7 +37,7 @@ export class UserRepository implements UserRepo {
         `;
         
         try {
-            const query = db.query(queryString);
+            const query = this.db.query(queryString);
             const hashed_password = await Bun.password.hash(user.password);
             
             const res = query.run(
@@ -76,7 +76,7 @@ export class UserRepository implements UserRepo {
         }
     }
 
-    async updateUserDetails(db: Database, userId: number, user: UpdateUserDetails): Promise<boolean> {
+    async updateUserDetails(userId: number, user: UpdateUserDetails): Promise<boolean> {
         const queryString = `
             UPDATE users 
             SET username = ?,
@@ -88,7 +88,7 @@ export class UserRepository implements UserRepo {
             WHERE user_id = ?
         `;
         
-        const query = db.query(queryString);
+        const query = this.db.query(queryString);
         const hashed_password = await Bun.password.hash(user.password);
         
         const res = query.run(
@@ -104,9 +104,9 @@ export class UserRepository implements UserRepo {
         return res.changes > 0;
     }
 
-    async updateUserPassword(db: Database, userId: number, newPassword: string) {
+    async updateUserPassword(userId: number, newPassword: string) {
         const hashedPassword = await Bun.password.hash(newPassword)
-        const query = db.query(`
+        const query = this.db.query(`
             UPDATE users 
             SET password_hash = ?, updated_at = datetime('now')
             WHERE user_id = ?
@@ -114,41 +114,52 @@ export class UserRepository implements UserRepo {
         return query.run(hashedPassword, userId).lastInsertRowid
     }
 
-    getAllUsers(db: Database): DbResult<Array<UserResponse>> {
-        const allUsers = db.query("select * from users").all() as UserResponse[]
+    doesUserExistsById(id: number): boolean {
+        const query_string = `SELECT EXISTS(SELECT 1 FROM products WHERE id = ?') as product_exists;`
+        const does_user_exists = this.db.query(query_string).run(id) as unknown as boolean
+        return does_user_exists
+    }
+
+    getAllUsers(): DbResult<Array<UserResponse>> {
+        const allUsers = this.db.query("select * from users").all() as UserResponse[]
         return { success:true, data: allUsers }
     }
 
-    getUserByEmail(db: Database, email: string): DbResult<UserResponse> {
-        const user = db.query("SELECT * FROM users WHERE email = ?").get(email) as UserResponse
+    getUserByEmail(email: string): DbResult<UserResponse> {
+        const user = this.db.query("SELECT * FROM users WHERE email = ?").get(email) as UserResponse
         return { success:true, data: user }
     }
 
-    getUserByUsername(db: Database, username: string): DbResult<UserResponse> {
-        const user = db.query("SELECT * FROM users WHERE username = ?").get(username) as UserResponse
+    getUserByUsername(username: string): DbResult<UserResponse> {
+        const user = this.db.query("SELECT * FROM users WHERE username = ?").get(username) as UserResponse
         return { success: true, data: user }
     }
 
-    getUserByRolename(db: Database, role: string): DbResult<UserResponse[]> {
-        const user = db.query("SELECT * FROM users WHERE role = ?").all(role) as UserResponse[] 
+    getUserByRolename(role: string): DbResult<UserResponse[]> {
+        const user = this.db.query("SELECT * FROM users WHERE role = ?").get(role) as UserResponse[] 
         return { success: true, data: user }
     }
 
-    getActiveUsers(db: Database): DbResult<UserResponse[]> {
-        const user = db.query("SELECT * FROM users WHERE is_active = ?").all(true) as UserResponse[] 
+    getUserById(id: number): DbResult<UserResponse>{
+        const user = this.db.query("SELECT * FROM users WHERE user_id = ?").get(id) as UserResponse
         return { success: true, data: user }
     }
 
+    getActiveUsers(): DbResult<UserResponse[]> {
+        console.log("er")
+        // probably open a github issue for this
+        const users = this.db.query("SELECT * FROM users WHERE is_active = 'True'").all() as UserResponse[] 
+        return { success: true, data: users }
+    }
 
-    deleteUser(db: Database, username: string): void {
-       const query = db.query("DELETE * FROM users WHERE username = ?")
+    deleteUser(username: string): void {
+       const query = this.db.query("DELETE * FROM users WHERE username = ?")
        query.run(username)
     }
 
-    deleteUserById(db: Database, user_id: number): void {
-       const query = db.query("DELETE * FROM users WHERE username = ?")
+    deleteUserById(user_id: number): void {
+       const query = this.db.query("DELETE * FROM users WHERE user_id = ?")
        query.run(user_id)
     }
-    
     
 }

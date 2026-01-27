@@ -4,13 +4,10 @@ import { UserResponse, UserDetails } from "../db/repository/user_repo"
 
 export class UserService {
 
-    private repo: UserRepository
-    constructor(){
-        this.repo = new UserRepository()
-    }
+    constructor(private repo: UserRepository){}
 
-    async createUser(db: Database, userDetails: UserDetails): Promise<number | string> {
-        const res = await this.repo.insertNewUser(db, userDetails)
+    async createUser(userDetails: UserDetails): Promise<number | string> {
+        const res = await this.repo.insertNewUser(userDetails)
         if (typeof res == 'number'){
             return res
         } else {
@@ -18,8 +15,11 @@ export class UserService {
         }
     }
 
-    async updateUserDetails(db: Database, user_id: RecordId, updated_details: UserDetails): Promise<boolean> {
-        const res = await this.repo.updateUserDetails(db, user_id, updated_details)
+    async updateUserDetails(
+        user_id: RecordId, 
+        updated_details: UserDetails
+    ): Promise<boolean> {
+        const res = await this.repo.updateUserDetails(user_id, updated_details)
         if (res){
             return true
         } else {
@@ -27,8 +27,11 @@ export class UserService {
         }
     }
 
-    async updateUserPassword(db: Database, userId: number, password: string): Promise<boolean> {
-        const res = await this.repo.updateUserPassword(db, userId, password)
+    async updateUserPassword(
+        userId: number, 
+        password: string
+    ): Promise<boolean> {
+        const res = await this.repo.updateUserPassword(userId, password)
         if (res){
             return true
         } else {
@@ -36,8 +39,13 @@ export class UserService {
         }
     }
 
-    getAllUsers(db: Database): UserResponse[] | string {
-        const res = this.repo.getAllUsers(db)
+    doesUserExistsById(id: number): boolean{
+        const res = this.repo.doesUserExistsById(id)
+        return res
+    }
+
+    getAllUsers(): UserResponse[] | string {
+        const res = this.repo.getAllUsers()
         if (res.success == true){
             return res.data
         } else {
@@ -45,8 +53,8 @@ export class UserService {
         }
     }
 
-    getUserByEmail(db: Database, email: string): UserResponse | string {
-        const res = this.repo.getUserByEmail(db, email)
+    getUserById(id: number): UserResponse | string {
+        const res = this.repo.getUserById(id)
         if (res.success == true){
             return res.data
         } else {
@@ -54,8 +62,8 @@ export class UserService {
         }
     }
 
-    getUserByUsername(db: Database, username: string): UserResponse | string {
-        const res = this.repo.getUserByUsername(db, username)
+    getUserByEmail(email: string): UserResponse | string {
+        const res = this.repo.getUserByEmail(email)
         if (res.success == true){
             return res.data
         } else {
@@ -63,8 +71,17 @@ export class UserService {
         }
     }
 
-    getUserByRolename(db: Database, role: string): UserResponse[] | string {
-        const res = this.repo.getUserByRolename(db, role)
+    getUserByUsername(username: string): UserResponse | string {
+        const res = this.repo.getUserByUsername(username)
+        if (res.success == true){
+            return res.data
+        } else {
+            return res.error
+        }
+    }
+
+    getUserByRolename(role: string): UserResponse[] | string {
+        const res = this.repo.getUserByRolename(role)
         if (res.success == true){
             return res.data
         } else {
@@ -72,8 +89,8 @@ export class UserService {
         }
     } 
 
-    getActiveUsers(db: Database): UserResponse[] | string {
-        const res = this.repo.getActiveUsers(db)
+    getActiveUsers(): UserResponse[] | string {
+        const res = this.repo.getActiveUsers()
         if (res.success == true){
             return res.data
         } else {
@@ -81,12 +98,12 @@ export class UserService {
         }
     }
 
-    deleteUserByUsername(db: Database, username: string): void {
-        this.repo.deleteUser(db, username)
+    deleteUserByUsername(username: string): void {
+        this.repo.deleteUser(username)
     }
 
-    deleteUserById(db: Database, user_id: number): void {
-        this.repo.deleteUserById(db, user_id)
+    deleteUserById(user_id: number): void {
+        this.repo.deleteUserById(user_id)
     }
 
 }
