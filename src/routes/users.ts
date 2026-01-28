@@ -6,6 +6,7 @@ import { validate_signup_request_form } from '../auth/signup'
 import { db } from '../db_service'
 import { validate_login_request_form } from '../auth/login'
 import { UserDetails } from '../db/repository/user_repo'
+import { success } from 'zod'
 
 export type ApiResponse<T = any> = {
   success: boolean;
@@ -144,9 +145,9 @@ users
         
         if (isMatch){
             response  = {
-            success: true,
-            data: { "bearerToken": token, redirect: '/user/products' },
-            timestamp: new Date().toISOString()
+                success: true,
+                data: { "bearerToken": token, redirect: '/user/products' },
+                timestamp: new Date().toISOString()
             }
     
             pinologger.info("successfully authenticated user, returning response")
@@ -163,6 +164,18 @@ users
             })
         }
         } 
+    })
+
+users
+    .get('/users/all', async (c) => {
+        pinologger.info("matched /users/all")
+        const res = user_services.getAllUsers()
+
+        return c.json({
+            success: true,
+            data: res,
+            timestamp: new Date().toISOString()
+        })
     })
 
 users
@@ -192,7 +205,6 @@ users
         const user = user_services.getUserById(id)
 
         if (typeof(user) == 'string'){
-
             return c.json({
                 success: false,
                 error: `user with ${id} not found`,
@@ -240,19 +252,78 @@ users
             pinologger.info("matched /users?email=")
             const user = user_services.getUserByEmail(email)
 
-
-
+            if (typeof user == 'string'){
+                return c.json({
+                    success: false,
+                    error: user,
+                    timestamp: new Date().toISOString()
+                }, 422)
+            } else if (user == null) {
+                return c.json({
+                    success: false,
+                    error: `user with ${role} role not found`,
+                    timestamp: new Date().toISOString()
+                }, 404)
+            } 
             
+            return c.json({
+                success: true,
+                data: user,
+                timestamp: new Date().toISOString()
+            })
         }
 
         if (username){
             pinologger.info("matched /users?username=")
+            
+            const user = user_services.getUserByUsername(username)
 
+            if (typeof user == 'string'){
+                return c.json({
+                    success: false,
+                    error: user,
+                    timestamp: new Date().toISOString()
+                }, 422)
+            } else if (user == null) {
+                return c.json({
+                    success: false,
+                    error: `user with ${username} username not found`,
+                    timestamp: new Date().toISOString()
+                }, 404)
+            }
+            
+            return c.json({
+                success: true,
+                data: user,
+                timestamp: new Date().toISOString()
+            })
         }
 
         if (role){
-            pinologger.info("matched /users?role")
 
+            pinologger.info("matched /users?role")
+            const user = user_services.getUserByRolename(role)
+
+            if (typeof user == 'string'){
+                return c.json({
+                    success: false,
+                    error: user,
+                    timestamp: new Date().toISOString()
+                }, 422)
+            } else if (user == null) {
+                return c.json({
+                    success: false,
+                    error: `user with ${role} role not found`,
+                    timestamp: new Date().toISOString()
+                }, 404)
+            }
+            
+            return c.json({
+                success: true,
+                data: user,
+                timestamp: new Date().toISOString()
+            })
+            
         }
     })
 

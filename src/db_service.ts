@@ -11,8 +11,9 @@ import { logger } from './logger'
 import { UserRepository } from "./db/repository/user_repo";
 import { PasswordResetRepository } from "./db/repository/password_reset_repo";
 import { AuditLogRepository, Log } from "./db/repository/audit_log_repo";
-import { ProductService } from "./services/product"
-import { SupplierService } from "./services/supplier"
+import { ProductService } from "./services/product";
+import { SupplierService } from "./services/supplier";
+import { PasswordResetService } from "./services/password_reset";
 import { UserService } from "./services/users";
 import { ProductRepository } from "./db/repository/product_repo";
 import { SupplierRepository } from "./db/repository/supplier_repo";
@@ -51,14 +52,14 @@ class SqliteDatabaseServices  {
     constructor(db: string){
 
         if (db == "concrete"){
-            this.database = new Database("./test.db", {strict: true})
+            this.database = new Database("./concrete.db", {strict: true})
         } else {
             this.database = new Database(":memory:", {strict: true})
         }
         
         this.users_repo          = new UserRepository(this.database)
         this.audit_log_repo      = new AuditLogRepository()
-        this.password_reset_repo = new PasswordResetRepository()
+        this.password_reset_repo = new PasswordResetRepository(this.database)
         this.products_repo       = new ProductRepository(this.database)
         this.suppliers_repo      = new SupplierRepository(this.database)
 
@@ -100,59 +101,8 @@ class SqliteDatabaseServices  {
         return new UserService(this.users_repo)
     }
 
-    async insertPasswordResetForm(passwordResetForm: PasswordResetRequestForm): Promise<number | string>{
-        const res = await this.password_reset_repo.createPasswordResetRequest(this.database, passwordResetForm)
-        if (typeof res == 'number'){
-            return res
-        } else {
-            return res.error
-        }
-    }
-
-    getPasswordResetRequestByEmail(email: string)  {
-        const res = this.password_reset_repo.getPasswordResetRequestByEmail(this.database, email)
-        if (res.success == true ){
-            return res
-        } else {
-            return res.error
-        }
-    }
-
-    async getPasswordResetRequestByUserId(user_id: number)  {
-        const res = this.password_reset_repo.getPasswordResetRequestByUserId(this.database, user_id)
-        if (res.success == true ){
-            return res
-        } else {
-            return res.error
-        }
-    }
-
-    async getPasswordResetRequestByExpiry(expires_at: number)  {
-        const res = this.password_reset_repo.getPasswordResetRequestByExpiry(this.database, expires_at)
-        if (res.success == true ){
-            return res
-        } else {
-            return res.error
-        }
-    }
-
-    async getPasswordResetRequestByToken(token: string)  {
-        const res = this.password_reset_repo.getPasswordResetRequestByToken(this.database, token)
-        if (res.success == true ){
-            return res
-        } else {
-            return res.error
-        }
-    }
-
-    async markTokenasUsed(token: string): Promise<boolean> {
-        const res = await this.password_reset_repo.markPasswordResetTokenAsUsed(this.database, token)
-
-        if (typeof res == 'number'){
-            return true
-        } else {
-            return false
-        }
+    password_service(){
+        return new PasswordResetService(this.password_reset_repo)
     }
 
     async create_audit_log(log: Log) {

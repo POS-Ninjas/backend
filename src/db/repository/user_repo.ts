@@ -146,9 +146,8 @@ export class UserRepository implements UserRepo {
     }
 
     getActiveUsers(): DbResult<UserResponse[]> {
-        console.log("er")
         // probably open a github issue for this
-        const users = this.db.query("SELECT * FROM users WHERE is_active = 'True'").all() as UserResponse[] 
+        const users = this.db.query("SELECT * FROM users WHERE is_active = ?").all(true) as UserResponse[] 
         return { success: true, data: users }
     }
 

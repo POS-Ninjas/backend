@@ -13,20 +13,20 @@ type DbResult<T> =
 
 interface PasswordResetImpl {
 
-    createPasswordResetRequest(db: Database, form: PasswordResetRequestForm): Promise<RecordId | { error: string }>
-    getPasswordResetRequestByToken(db: Database, token: string): DbResult<PasswordResetRecord>
-    getPasswordResetRequestByEmail(db: Database, email: string): DbResult<PasswordResetRecord>
-    getPasswordResetRequestByUserId(db: Database, user_id: number): DbResult<PasswordResetRecord>
-    getPasswordResetRequestByExpiry(db: Database, expires_at: number): DbResult<PasswordResetRecord>
+    createPasswordResetRequest(form: PasswordResetRequestForm): Promise<RecordId | { error: string }>
+    getPasswordResetRequestByToken(token: string): DbResult<PasswordResetRecord>
+    getPasswordResetRequestByEmail(email: string): DbResult<PasswordResetRecord>
+    getPasswordResetRequestByUserId(user_id: number): DbResult<PasswordResetRecord>
+    getPasswordResetRequestByExpiry(expires_at: number): DbResult<PasswordResetRecord>
 
     // update the table and delete the record 
 }
 
 export class PasswordResetRepository implements PasswordResetImpl {
 
-    constructor(){}
+     constructor(private db: Database){}
 
-    async createPasswordResetRequest(db: Database, form: PasswordResetRequestForm): Promise<RecordId | { error: string }> {
+    async createPasswordResetRequest(form: PasswordResetRequestForm): Promise<RecordId | { error: string }> {
         const queryString = `
             INSERT INTO password_reset (
                 user_id, email, token,
@@ -36,7 +36,7 @@ export class PasswordResetRepository implements PasswordResetImpl {
         `
         try {
 
-            const query = db.query(queryString)
+            const query = this.db.query(queryString)
             const res = query.run(
                 form.user_id,
                 form.email,
@@ -52,28 +52,28 @@ export class PasswordResetRepository implements PasswordResetImpl {
         
     }
 
-    getPasswordResetRequestByToken(db: Database, token: string): DbResult<PasswordResetRecord> {
-        const record = db.query("SELECT * FROM PASSWORD_RESET where token = ?").get(token) as PasswordResetRecord
+    getPasswordResetRequestByToken(token: string): DbResult<PasswordResetRecord> {
+        const record = this.db.query("SELECT * FROM PASSWORD_RESET where token = ?").get(token) as PasswordResetRecord
         return { success: true, data: record }
     }
 
-    getPasswordResetRequestByEmail(db: Database, email: string): DbResult<PasswordResetRecord> {
-        const record = db.query("SELECT * FROM PASSWORD_RESET where email = ?").get(email) as PasswordResetRecord
+    getPasswordResetRequestByEmail(email: string): DbResult<PasswordResetRecord> {
+        const record = this.db.query("SELECT * FROM PASSWORD_RESET where email = ?").get(email) as PasswordResetRecord
         return { success: true, data: record }
     }
 
-    getPasswordResetRequestByUserId(db: Database, user_id: number): DbResult<PasswordResetRecord> {
-        const record = db.query("SELECT * FROM PASSWORD_RESET where user_id = ?").get(user_id) as PasswordResetRecord
+    getPasswordResetRequestByUserId(user_id: number): DbResult<PasswordResetRecord> {
+        const record = this.db.query("SELECT * FROM PASSWORD_RESET where user_id = ?").get(user_id) as PasswordResetRecord
         return { success: true, data: record }
     }
 
-    getPasswordResetRequestByExpiry(db: Database, expires_at: number): DbResult<PasswordResetRecord> {
-        const record = db.query("SELECT * FROM PASSWORD_RESET where expires_at = ?").get(expires_at) as PasswordResetRecord
+    getPasswordResetRequestByExpiry(expires_at: number): DbResult<PasswordResetRecord> {
+        const record = this.db.query("SELECT * FROM PASSWORD_RESET where expires_at = ?").get(expires_at) as PasswordResetRecord
         return { success: true, data: record }
     }
 
-    async markPasswordResetTokenAsUsed(db: Database, token: string) {
-        const query = db.query(`
+    async markPasswordResetTokenAsUsed(token: string) {
+        const query = this.db.query(`
             UPDATE password_reset 
             SET used_at = datetime('now')
             WHERE token = ?
